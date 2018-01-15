@@ -7,6 +7,7 @@ use error::{Error, Result};
 
 const STELLAR_SCALE: i64 = 7;
 
+/// Amount in XLM.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Amount {
     inner: BigDecimal,
@@ -53,12 +54,37 @@ impl FromStr for Amount {
     }
 }
 
+/// Amount in stroops.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Stroops(pub i64);
 
 impl Stroops {
     pub fn new(amount: i64) -> Stroops {
         Stroops(amount)
+    }
+}
+
+/// Price in fractional representation.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Price {
+    numerator: i32,
+    denominator: i32,
+}
+
+impl Price {
+    pub fn new(numerator: i32, denominator: i32) -> Price {
+        Price {
+            numerator,
+            denominator,
+        }
+    }
+
+    pub fn numerator(&self) -> i32 {
+        self.numerator
+    }
+
+    pub fn denominator(&self) -> i32 {
+        self.denominator
     }
 }
 

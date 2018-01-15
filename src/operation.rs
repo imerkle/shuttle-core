@@ -1,4 +1,4 @@
-use amount::Amount;
+use amount::{Amount, Price};
 use asset::Asset;
 use keypair::PublicKey;
 
@@ -27,6 +27,57 @@ pub struct PaymentOperation {
     pub amount: Amount,
 }
 
+/// Send the specified asset to the destination account, optionally through a path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PathPaymentOperation {
+    /// The source account for the operation.
+    pub source: Option<PublicKey>,
+    /// The destination account id.
+    pub destination: PublicKey,
+    /// The asset to pay with.
+    pub send_asset: Asset,
+    /// The maximum amount of send_asset to send.
+    pub send_max: Amount,
+    /// The asset the destination will receive.
+    pub dest_asset: Asset,
+    /// The amount the destination receives.
+    pub dest_amount: Amount,
+    /// The assets path.
+    pub path: Vec<Asset>,
+}
+
+/// Create, update, or delete an offer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManageOfferOperation {
+    /// The source account for the operation.
+    pub source: Option<PublicKey>,
+    /// What you're selling.
+    pub selling: Asset,
+    /// What you're buying.
+    pub buying: Asset,
+    /// The total amount you're selling. If 0, deletes the offer.
+    pub amount: Amount,
+    /// The exchange rate ratio.
+    pub price: Price,
+    /// Offer id. If 0, creates a new offer.
+    pub offer_id: u64,
+}
+
+/// Create a passive offer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CreatePassiveOfferOperation {
+    /// The source account for the operation.
+    pub source: Option<PublicKey>,
+    /// What you're selling.
+    pub selling: Asset,
+    /// What you're buying.
+    pub buying: Asset,
+    /// The total amount you're selling. If 0, deletes the offer.
+    pub amount: Amount,
+    /// The exchange rate ratio.
+    pub price: Price,
+}
+
 /// Add data entry to the ledger.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ManageDataOperation {
@@ -49,6 +100,13 @@ pub struct InflationOperation {
 pub enum Operation {
     CreateAccount(CreateAccountOperation),
     Payment(PaymentOperation),
-    ManageData(ManageDataOperation),
+    PathPayment(PathPaymentOperation),
+    ManageOffer(ManageOfferOperation),
+    CreatePassiveOffer(CreatePassiveOfferOperation),
+    SetOptions,
+    ChangeTrust,
+    AllowTrust,
+    AccountMerge,
     Inflation(InflationOperation),
+    ManageData(ManageDataOperation),
 }

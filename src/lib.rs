@@ -40,17 +40,20 @@ pub mod xdr;
 pub use self::error::{Error, Result};
 pub use self::keypair::{KeyPair, PublicKey, SecretKey};
 pub use self::signature::{DecoratedSignature, Signature, SignatureHint};
-pub use self::amount::Amount;
+pub use self::amount::{Amount, Price, Stroops};
 pub use self::account::Account;
 pub use self::asset::{Asset, CreditAsset};
 pub use self::memo::Memo;
 pub use self::network::Network;
 pub use self::time_bounds::{TimeBounds, UnixTimestamp};
-pub use self::operation::{CreateAccountOperation, InflationOperation, ManageDataOperation,
-                          Operation, PaymentOperation};
+pub use self::operation::{CreateAccountOperation, CreatePassiveOfferOperation, InflationOperation,
+                          ManageDataOperation, ManageOfferOperation, Operation,
+                          PathPaymentOperation, PaymentOperation};
 
-pub use self::operation_builder::{CreateAccountOperationBuilder, InflationOperationBuilder,
-                                  ManageDataOperationBuilder, OperationBuilder,
+pub use self::operation_builder::{CreateAccountOperationBuilder,
+                                  CreatePassiveOfferOperationBuilder, InflationOperationBuilder,
+                                  ManageDataOperationBuilder, ManageOfferOperationBuilder,
+                                  OperationBuilder, PathPaymentOperationBuilder,
                                   PaymentOperationBuilder};
 pub use self::transaction::Transaction;
 pub use self::transaction_builder::TransactionBuilder;
