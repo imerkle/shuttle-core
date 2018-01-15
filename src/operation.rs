@@ -35,7 +35,14 @@ pub struct ManageDataOperation {
     /// The key of the data entry
     pub name: String,
     /// The value of the data entry. A value of `None` will delete the entry.
-    pub value: Option<String>,
+    pub value: Option<Vec<u8>>,
+}
+
+/// Generate inflation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InflationOperation {
+    /// The source account for the operation.
+    pub source: Option<PublicKey>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,4 +50,5 @@ pub enum Operation {
     CreateAccount(CreateAccountOperation),
     Payment(PaymentOperation),
     ManageData(ManageDataOperation),
+    Inflation(InflationOperation),
 }

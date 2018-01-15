@@ -1,7 +1,8 @@
 use std::result;
 use std::str::FromStr;
+use num_bigint::BigInt;
 use bigdecimal::BigDecimal;
-use num_traits::cast::ToPrimitive;
+use num_traits::cast::{FromPrimitive, ToPrimitive};
 use error::{Error, Result};
 
 const STELLAR_SCALE: i64 = 7;
@@ -12,12 +13,22 @@ pub struct Amount {
 }
 
 impl Amount {
+    pub fn from_stroops(stroops: Stroops) -> Result<Amount> {
+        let data = BigInt::from_i64(stroops.0).ok_or(Error::TBD)?;
+        let inner = BigDecimal::new(data, STELLAR_SCALE);
+        Ok(Amount { inner })
+    }
+
     pub fn as_stroops(&self) -> Result<Stroops> {
-        let (data, exp) = self.inner.as_bigint_and_exponent();
+        self.clone().into_stroops()
+    }
+
+    pub fn into_stroops(self) -> Result<Stroops> {
+        let (data, exp) = self.inner.into_bigint_and_exponent();
         if exp != STELLAR_SCALE {
             return Err(Error::TBD); // wrong scale
         }
-        match data.to_u64() {
+        match data.to_i64() {
             Some(stroops) => Ok(Stroops::new(stroops)),
             None => Err(Error::TBD),
         }
@@ -26,6 +37,7 @@ impl Amount {
 
 impl FromStr for Amount {
     type Err = Error;
+
     fn from_str(s: &str) -> result::Result<Amount, Error> {
         let inner = BigDecimal::from_str(&s)?;
         // Check we don't lose precision
@@ -42,13 +54,11 @@ impl FromStr for Amount {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Stroops {
-    amount: u64,
-}
+pub struct Stroops(pub i64);
 
 impl Stroops {
-    pub fn new(amount: u64) -> Stroops {
-        Stroops { amount }
+    pub fn new(amount: i64) -> Stroops {
+        Stroops(amount)
     }
 }
 

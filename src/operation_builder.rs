@@ -1,7 +1,39 @@
-use operation::{CreateAccountOperation, ManageDataOperation, PaymentOperation};
+use operation::{CreateAccountOperation, InflationOperation, ManageDataOperation, Operation,
+                PaymentOperation};
 use keypair::PublicKey;
 use asset::Asset;
 use amount::Amount;
+
+pub struct OperationBuilder;
+
+impl OperationBuilder {
+    pub fn inflation() -> InflationOperationBuilder {
+        InflationOperationBuilder::new()
+    }
+
+    pub fn create_account(
+        destination: PublicKey,
+        balance: Amount,
+    ) -> CreateAccountOperationBuilder {
+        CreateAccountOperationBuilder::new(destination, balance)
+    }
+
+    pub fn payment(
+        destination: PublicKey,
+        asset: Asset,
+        amount: Amount,
+    ) -> PaymentOperationBuilder {
+        PaymentOperationBuilder::new(destination, asset, amount)
+    }
+
+    pub fn set_data(name: String, value: Vec<u8>) -> ManageDataOperationBuilder {
+        ManageDataOperationBuilder::set_data(name, value)
+    }
+
+    pub fn delete_data(name: String) -> ManageDataOperationBuilder {
+        ManageDataOperationBuilder::delete_data(name)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct CreateAccountOperationBuilder {
@@ -23,8 +55,8 @@ impl CreateAccountOperationBuilder {
         self
     }
 
-    pub fn build(self) -> CreateAccountOperation {
-        self.inner
+    pub fn build(self) -> Operation {
+        Operation::CreateAccount(self.inner)
     }
 }
 
@@ -49,8 +81,8 @@ impl PaymentOperationBuilder {
         self
     }
 
-    pub fn build(self) -> PaymentOperation {
-        self.inner
+    pub fn build(self) -> Operation {
+        Operation::Payment(self.inner)
     }
 }
 
@@ -60,7 +92,7 @@ pub struct ManageDataOperationBuilder {
 }
 
 impl ManageDataOperationBuilder {
-    pub fn set_entry(name: String, value: String) -> Self {
+    pub fn set_data(name: String, value: Vec<u8>) -> Self {
         let inner = ManageDataOperation {
             source: None,
             name,
@@ -69,7 +101,7 @@ impl ManageDataOperationBuilder {
         ManageDataOperationBuilder { inner }
     }
 
-    pub fn delete_entry(name: String) -> Self {
+    pub fn delete_data(name: String) -> Self {
         let inner = ManageDataOperation {
             source: None,
             name,
@@ -83,7 +115,28 @@ impl ManageDataOperationBuilder {
         self
     }
 
-    pub fn build(self) -> ManageDataOperation {
-        self.inner
+    pub fn build(self) -> Operation {
+        Operation::ManageData(self.inner)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct InflationOperationBuilder {
+    inner: InflationOperation,
+}
+
+impl InflationOperationBuilder {
+    pub fn new() -> Self {
+        let inner = InflationOperation { source: None };
+        InflationOperationBuilder { inner }
+    }
+
+    pub fn with_source(mut self, source: PublicKey) -> Self {
+        self.inner.source = Some(source);
+        self
+    }
+
+    pub fn build(self) -> Operation {
+        Operation::Inflation(self.inner)
     }
 }

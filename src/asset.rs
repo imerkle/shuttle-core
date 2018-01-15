@@ -12,6 +12,17 @@ pub enum Asset {
     Credit(CreditAsset),
 }
 
+impl Asset {
+    pub fn native() -> Asset {
+        Asset::Native
+    }
+
+    pub fn credit(code: String, issuer: PublicKey) -> Result<Asset> {
+        let inner = CreditAsset::new(code, issuer)?;
+        Ok(Asset::Credit(inner))
+    }
+}
+
 /// A non-native asset, identified by asset code/issuer id.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreditAsset {
@@ -26,6 +37,14 @@ impl CreditAsset {
         } else {
             Ok(CreditAsset { code, issuer })
         }
+    }
+
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    pub fn issuer(&self) -> &PublicKey {
+        &self.issuer
     }
 }
 
