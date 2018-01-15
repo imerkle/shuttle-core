@@ -2,12 +2,15 @@ use account::Account;
 use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
-use keypair::PublicKey;
+use keypair::{KeyPair, PublicKey};
 use operation::Operation;
+
+const BASE_FEE: Stroops = Stroops(100);
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
-    source: Account,
+    source: KeyPair,
+    sequence: u64,
     fee: Stroops,
     time_bounds: Option<TimeBounds>,
     memo: Memo,
@@ -16,31 +19,21 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn new(
-        source: Account,
-        fee: Stroops,
+        source: KeyPair,
+        sequence: u64,
         time_bounds: Option<TimeBounds>,
         memo: Memo,
         operations: Vec<Operation>,
     ) -> Transaction {
+        let fee = BASE_FEE * operations.len();
         Transaction {
             source,
+            sequence,
             fee,
             time_bounds,
             memo,
             operations,
         }
-    }
-
-    pub fn source(&self) -> &Account {
-        &self.source
-    }
-
-    pub fn source_public_key(&self) -> &PublicKey {
-        self.source.public_key()
-    }
-
-    pub fn source_sequence(&self) -> u64 {
-        self.source.sequence()
     }
 
     pub fn base_fee(&self) -> &Stroops {
@@ -53,5 +46,13 @@ impl Transaction {
 
     pub fn memo(&self) -> &Memo {
         &self.memo
+    }
+
+    pub fn sequence(&self) -> u64 {
+        self.sequence
+    }
+
+    pub fn operations(&self) -> &Vec<Operation> {
+        &self.operations
     }
 }

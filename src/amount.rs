@@ -1,5 +1,6 @@
 use std::result;
 use std::str::FromStr;
+use std::ops::Mul;
 use num_bigint::BigInt;
 use bigdecimal::BigDecimal;
 use num_traits::cast::{FromPrimitive, ToPrimitive};
@@ -61,6 +62,14 @@ pub struct Stroops(pub i64);
 impl Stroops {
     pub fn new(amount: i64) -> Stroops {
         Stroops(amount)
+    }
+}
+
+impl Mul<usize> for Stroops {
+    type Output = Self;
+
+    fn mul(self, rhs: usize) -> Self {
+        Stroops(self.0 * rhs as i64)
     }
 }
 
