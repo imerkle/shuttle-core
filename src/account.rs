@@ -4,16 +4,20 @@ use keypair::PublicKey;
 /// number.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Account {
-    account_id: PublicKey,
+    public_key: PublicKey,
     sequence: u64,
 }
 
 impl Account {
-    pub fn new(account_id: PublicKey, sequence: u64) -> Account {
+    pub fn new(public_key: PublicKey, sequence: u64) -> Account {
         Account {
-            account_id,
+            public_key,
             sequence,
         }
+    }
+
+    pub fn public_key(&self) -> &PublicKey {
+        &self.public_key
     }
 
     /// Increments the sequence number, returns the old sequence number.

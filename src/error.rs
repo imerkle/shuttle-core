@@ -1,7 +1,7 @@
 use std::result;
 use std::convert::From;
 use base64;
-//use serde_xdr;
+use bigdecimal;
 
 #[derive(Debug)]
 pub enum Error {
@@ -11,8 +11,7 @@ pub enum Error {
     InvalidSeed,
     TBD,
     DecodeError(base64::DecodeError),
-    //SerializationError(serde_xdr::CompatSerializationError),
-    //DeserializationError(serde_xdr::CompatDeserializationError),
+    ParseAmountError(bigdecimal::ParseBigDecimalError),
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -23,16 +22,8 @@ impl From<base64::DecodeError> for Error {
     }
 }
 
-/*
-impl From<serde_xdr::CompatDeserializationError> for Error {
-    fn from(err: serde_xdr::CompatDeserializationError) -> Self {
-        Error::DeserializationError(err)
+impl From<bigdecimal::ParseBigDecimalError> for Error {
+    fn from(err: bigdecimal::ParseBigDecimalError) -> Self {
+        Error::ParseAmountError(err)
     }
 }
-
-impl From<serde_xdr::CompatSerializationError> for Error {
-    fn from(err: serde_xdr::CompatSerializationError) -> Self {
-        Error::SerializationError(err)
-    }
-}
-*/

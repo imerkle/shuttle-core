@@ -4,7 +4,7 @@ use keypair::PublicKey;
 const MAX_CODE_LEN: usize = 12;
 
 /// Enum representing an asset.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Asset {
     /// The native asset (XLM).
     Native,
@@ -13,7 +13,7 @@ pub enum Asset {
 }
 
 /// A non-native asset, identified by asset code/issuer id.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreditAsset {
     code: String,
     issuer: PublicKey,
