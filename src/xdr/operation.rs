@@ -1,10 +1,7 @@
-use std::convert::From;
-use try_from::{TryFrom, TryInto};
-use std::result;
 use amount::{Amount, Price, Stroops};
-use error::{Error, Result};
+use error::Result;
 use operation;
-use xdr::{Asset, PublicKey};
+use xdr::{Asset, FromXdr, PublicKey, ToXdr};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Operation {
@@ -79,52 +76,64 @@ pub struct ManageDataOperation {
     value: Option<Vec<u8>>,
 }
 
-fn from_create_account(create: ::CreateAccountOperation) -> Operation {
+impl ToXdr<Operation> for ::Operation {
+    fn to_xdr(self) -> Result<Operation> {
+        match self {
+            ::Operation::CreateAccount(op) => to_create_account(op),
+            ::Operation::Payment(op) => to_payment(op),
+            ::Operation::PathPayment(op) => to_path_payment(op),
+            ::Operation::ManageOffer(op) => to_manage_offer(op),
+            ::Operation::CreatePassiveOffer(op) => to_create_passive_offer(op),
+            ::Operation::ManageData(op) => to_manage_data(op),
+            ::Operation::Inflation(op) => to_inflation(op),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+fn to_create_account(create: ::CreateAccountOperation) -> Result<Operation> {
     let source = match create.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
-    let destination = PublicKey::from(create.destination);
-    let balance = create.balance.into_stroops().unwrap();
+    let destination = create.destination.to_xdr()?;
+    let balance = create.balance.into_stroops()?;
     let inner = OperationInner::CreateAccount(CreateAccountOperation {
         destination,
         balance,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_payment(payment: ::PaymentOperation) -> Operation {
+fn to_payment(payment: ::PaymentOperation) -> Result<Operation> {
     let source = match payment.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
-    let destination = PublicKey::from(payment.destination);
-    let asset = Asset::from(payment.asset);
-    let amount = payment.amount.into_stroops().unwrap();
+    let destination = payment.destination.to_xdr()?;
+    let asset = payment.asset.to_xdr()?;
+    let amount = payment.amount.into_stroops()?;
     let inner = OperationInner::Payment(PaymentOperation {
         destination,
         asset,
         amount,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_path_payment(payment: ::PathPaymentOperation) -> Operation {
+fn to_path_payment(payment: ::PathPaymentOperation) -> Result<Operation> {
     let source = match payment.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
 
-    let destination = PublicKey::from(payment.destination);
-    let send_asset = Asset::from(payment.send_asset);
-    let send_max = payment.send_max.into_stroops().unwrap();
-    let dest_asset = Asset::from(payment.dest_asset);
-    let dest_amount = payment.dest_amount.into_stroops().unwrap();
-    let path = payment
-        .path
-        .into_iter()
-        .map(|p| Asset::from(p))
-        .collect::<Vec<_>>();
+    let destination = payment.destination.to_xdr()?;
+    let send_asset = payment.send_asset.to_xdr()?;
+    let send_max = payment.send_max.into_stroops()?;
+    let dest_asset = payment.dest_asset.to_xdr()?;
+    let dest_amount = payment.dest_amount.into_stroops()?;
+    let path_res: Result<Vec<_>> = payment.path.into_iter().map(|p| p.to_xdr()).collect();
+    let path = path_res?;
 
     let inner = OperationInner::PathPayment(PathPaymentOperation {
         destination,
@@ -134,17 +143,17 @@ fn from_path_payment(payment: ::PathPaymentOperation) -> Operation {
         dest_amount,
         path,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_manage_offer(manage: ::ManageOfferOperation) -> Operation {
+fn to_manage_offer(manage: ::ManageOfferOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
-    let selling = Asset::from(manage.selling);
-    let buying = Asset::from(manage.buying);
-    let amount = manage.amount.into_stroops().unwrap();
+    let selling = manage.selling.to_xdr()?;
+    let buying = manage.buying.to_xdr()?;
+    let amount = manage.amount.into_stroops()?;
     let price = manage.price;
     let offer_id = manage.offer_id;
     let inner = OperationInner::ManageOffer(ManageOfferOperation {
@@ -154,17 +163,17 @@ fn from_manage_offer(manage: ::ManageOfferOperation) -> Operation {
         price,
         offer_id,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_create_passive_offer(manage: ::CreatePassiveOfferOperation) -> Operation {
+fn to_create_passive_offer(manage: ::CreatePassiveOfferOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
-    let selling = Asset::from(manage.selling);
-    let buying = Asset::from(manage.buying);
-    let amount = manage.amount.into_stroops().unwrap();
+    let selling = manage.selling.to_xdr()?;
+    let buying = manage.buying.to_xdr()?;
+    let amount = manage.amount.into_stroops()?;
     let price = manage.price;
     let inner = OperationInner::CreatePassiveOffer(CreatePassiveOfferOperation {
         selling,
@@ -172,50 +181,54 @@ fn from_create_passive_offer(manage: ::CreatePassiveOfferOperation) -> Operation
         amount,
         price,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_manage_data(manage: ::ManageDataOperation) -> Operation {
+fn to_manage_data(manage: ::ManageDataOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
     let inner = OperationInner::ManageData(ManageDataOperation {
         name: manage.name,
         value: manage.value,
     });
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-fn from_inflation(inflation: ::InflationOperation) -> Operation {
+fn to_inflation(inflation: ::InflationOperation) -> Result<Operation> {
     let source = match inflation.source {
         None => None,
-        Some(pk) => Some(PublicKey::from(pk)),
+        Some(pk) => Some(pk.to_xdr()?),
     };
     let inner = OperationInner::Inflation;
-    Operation::new(source, inner)
+    Ok(Operation::new(source, inner))
 }
 
-impl From<::Operation> for Operation {
-    fn from(op: ::Operation) -> Self {
-        match op {
-            ::Operation::CreateAccount(op) => from_create_account(op),
-            ::Operation::Payment(op) => from_payment(op),
-            ::Operation::PathPayment(op) => from_path_payment(op),
-            ::Operation::ManageOffer(op) => from_manage_offer(op),
-            ::Operation::CreatePassiveOffer(op) => from_create_passive_offer(op),
-            ::Operation::ManageData(op) => from_manage_data(op),
-            ::Operation::Inflation(op) => from_inflation(op),
+impl<'de> FromXdr<'de, Operation> for ::Operation {
+    fn from_xdr(op: Operation) -> Result<::Operation> {
+        let source = match op.source {
+            None => None,
+            Some(pk) => Some(::PublicKey::from_xdr(pk)?),
+        };
+        match op.inner {
+            OperationInner::CreateAccount(inner) => from_create_account(source, inner),
+            OperationInner::Payment(inner) => from_payment(source, inner),
+            OperationInner::PathPayment(inner) => from_path_payment(source, inner),
+            OperationInner::ManageOffer(inner) => from_manage_offer(source, inner),
+            OperationInner::CreatePassiveOffer(inner) => from_create_passive_offer(source, inner),
+            OperationInner::ManageData(inner) => from_manage_data(source, inner),
+            OperationInner::Inflation => from_inflation(source),
             _ => unimplemented!(),
         }
     }
 }
 
-fn to_create_account(
+fn from_create_account(
     source: Option<::PublicKey>,
     inner: CreateAccountOperation,
 ) -> Result<::Operation> {
-    let destination = inner.destination.try_into()?;
+    let destination = ::PublicKey::from_xdr(inner.destination)?;
     let balance = Amount::from_stroops(inner.balance)?;
     Ok(::Operation::CreateAccount(
         operation::CreateAccountOperation {
@@ -226,9 +239,9 @@ fn to_create_account(
     ))
 }
 
-fn to_payment(source: Option<::PublicKey>, inner: PaymentOperation) -> Result<::Operation> {
-    let destination = inner.destination.try_into()?;
-    let asset = inner.asset.try_into()?;
+fn from_payment(source: Option<::PublicKey>, inner: PaymentOperation) -> Result<::Operation> {
+    let destination = ::PublicKey::from_xdr(inner.destination)?;
+    let asset = ::Asset::from_xdr(inner.asset)?;
     let amount = Amount::from_stroops(inner.amount)?;
     Ok(::Operation::Payment(operation::PaymentOperation {
         source,
@@ -238,16 +251,20 @@ fn to_payment(source: Option<::PublicKey>, inner: PaymentOperation) -> Result<::
     }))
 }
 
-fn to_path_payment(
+fn from_path_payment(
     source: Option<::PublicKey>,
     inner: PathPaymentOperation,
 ) -> Result<::Operation> {
-    let destination = inner.destination.try_into()?;
-    let send_asset = inner.send_asset.try_into()?;
+    let destination = ::PublicKey::from_xdr(inner.destination)?;
+    let send_asset = ::Asset::from_xdr(inner.send_asset)?;
     let send_max = Amount::from_stroops(inner.send_max)?;
-    let dest_asset = inner.dest_asset.try_into()?;
+    let dest_asset = ::Asset::from_xdr(inner.dest_asset)?;
     let dest_amount = Amount::from_stroops(inner.dest_amount)?;
-    let path_res: Result<Vec<_>> = inner.path.into_iter().map(|p| p.try_into()).collect();
+    let path_res: Result<Vec<_>> = inner
+        .path
+        .into_iter()
+        .map(|p| ::Asset::from_xdr(p))
+        .collect();
     let path = path_res?;
 
     Ok(::Operation::PathPayment(operation::PathPaymentOperation {
@@ -261,12 +278,12 @@ fn to_path_payment(
     }))
 }
 
-fn to_manage_offer(
+fn from_manage_offer(
     source: Option<::PublicKey>,
     inner: ManageOfferOperation,
 ) -> Result<::Operation> {
-    let selling = inner.selling.try_into()?;
-    let buying = inner.buying.try_into()?;
+    let selling = ::Asset::from_xdr(inner.selling)?;
+    let buying = ::Asset::from_xdr(inner.buying)?;
     let amount = Amount::from_stroops(inner.amount)?;
     let price = inner.price;
     let offer_id = inner.offer_id;
@@ -280,12 +297,12 @@ fn to_manage_offer(
     }))
 }
 
-fn to_create_passive_offer(
+fn from_create_passive_offer(
     source: Option<::PublicKey>,
     inner: CreatePassiveOfferOperation,
 ) -> Result<::Operation> {
-    let selling = inner.selling.try_into()?;
-    let buying = inner.buying.try_into()?;
+    let selling = ::Asset::from_xdr(inner.selling)?;
+    let buying = ::Asset::from_xdr(inner.buying)?;
     let amount = Amount::from_stroops(inner.amount)?;
     let price = inner.price;
     Ok(::Operation::CreatePassiveOffer(
@@ -299,7 +316,10 @@ fn to_create_passive_offer(
     ))
 }
 
-fn to_manage_data(source: Option<::PublicKey>, inner: ManageDataOperation) -> Result<::Operation> {
+fn from_manage_data(
+    source: Option<::PublicKey>,
+    inner: ManageDataOperation,
+) -> Result<::Operation> {
     Ok(::Operation::ManageData(operation::ManageDataOperation {
         source,
         name: inner.name,
@@ -307,48 +327,24 @@ fn to_manage_data(source: Option<::PublicKey>, inner: ManageDataOperation) -> Re
     }))
 }
 
-fn to_inflation(source: Option<::PublicKey>) -> Result<::Operation> {
+fn from_inflation(source: Option<::PublicKey>) -> Result<::Operation> {
     Ok(::Operation::Inflation(operation::InflationOperation {
         source,
     }))
 }
 
-impl TryFrom<Operation> for ::Operation {
-    type Err = Error;
-
-    fn try_from(op: Operation) -> result::Result<Self, Error> {
-        let source = match op.source {
-            None => None,
-            Some(pk) => Some(pk.try_into()?),
-        };
-        match op.inner {
-            OperationInner::CreateAccount(inner) => to_create_account(source, inner),
-            OperationInner::Payment(inner) => to_payment(source, inner),
-            OperationInner::PathPayment(inner) => to_path_payment(source, inner),
-            OperationInner::ManageOffer(inner) => to_manage_offer(source, inner),
-            OperationInner::CreatePassiveOffer(inner) => to_create_passive_offer(source, inner),
-            OperationInner::ManageData(inner) => to_manage_data(source, inner),
-            OperationInner::Inflation => to_inflation(source),
-            _ => unimplemented!(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use try_from::TryInto;
     use {InflationOperationBuilder, Operation, OperationBuilder};
     use {Amount, Asset, Price, PublicKey};
-    use xdr;
+    use {FromXdr, ToXdr};
 
     fn do_it(op: Operation, expected: &str) {
-        let xdr_op = xdr::Operation::from(op.clone());
-        let encoded = xdr::to_base64(&xdr_op).unwrap();
+        let encoded = op.clone().to_base64().unwrap();
         assert_eq!(encoded, expected);
-        let decoded = xdr::from_base64::<xdr::Operation>(&encoded).unwrap();
-        let op_back: Operation = decoded.try_into().unwrap();
-        assert_eq!(op_back, op);
+        let decoded = Operation::from_base64(&encoded).unwrap();
+        assert_eq!(decoded, op);
     }
 
     #[test]

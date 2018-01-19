@@ -13,8 +13,6 @@ extern crate serde_bytes;
 extern crate serde_derive;
 extern crate serde_xdr;
 
-extern crate try_from;
-
 mod error;
 
 // Keys & Crypto
@@ -57,3 +55,5 @@ pub use self::operation_builder::{CreateAccountOperationBuilder,
                                   PaymentOperationBuilder};
 pub use self::transaction::Transaction;
 pub use self::transaction_builder::TransactionBuilder;
+
+pub use self::xdr::{FromXdr, ToXdr};

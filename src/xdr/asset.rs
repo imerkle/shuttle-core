@@ -1,10 +1,8 @@
-use std::convert::From;
-use std::result;
 use std::str;
-use try_from::{TryFrom, TryInto};
 use serde_xdr;
-use error::{Error, Result};
+use error::Result;
 use xdr::keypair::PublicKey;
+use xdr::{FromXdr, ToXdr};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alphanum4 {
@@ -25,30 +23,46 @@ pub enum Asset {
     Alphanum12(Alphanum12),
 }
 
-impl From<::Asset> for Asset {
-    fn from(asset: ::Asset) -> Self {
-        match asset {
-            ::Asset::Native => Asset::Native,
-            ::Asset::Credit(ref credit_asset) => {
+impl ToXdr<Asset> for ::Asset {
+    fn to_xdr(self) -> Result<Asset> {
+        match self {
+            ::Asset::Native => Ok(Asset::Native),
+            ::Asset::Credit(credit_asset) => {
                 let code = credit_asset.code();
                 let len = code.len();
                 if len <= 4 {
                     let mut code_buf = [0; 4];
                     code_buf[..len].copy_from_slice(code.as_bytes());
-                    Asset::Alphanum4(Alphanum4 {
+                    Ok(Asset::Alphanum4(Alphanum4 {
                         code: code_buf,
-                        issuer: PublicKey::from(credit_asset.issuer().clone()),
-                    })
+                        issuer: credit_asset.issuer().clone().to_xdr()?,
+                    }))
                 } else {
                     // we know for sure code length is less than 12
                     // from ::Asset::new
                     let mut code_buf = [0; 12];
                     code_buf[..len].copy_from_slice(code.as_bytes());
-                    Asset::Alphanum12(Alphanum12 {
+                    Ok(Asset::Alphanum12(Alphanum12 {
                         code: code_buf,
-                        issuer: PublicKey::from(credit_asset.issuer().clone()),
-                    })
+                        issuer: credit_asset.issuer().clone().to_xdr()?,
+                    }))
                 }
+            }
+        }
+    }
+}
+
+impl<'de> FromXdr<'de, Asset> for ::Asset {
+    fn from_xdr(asset: Asset) -> Result<::Asset> {
+        match asset {
+            Asset::Native => Ok(::Asset::Native),
+            Asset::Alphanum4(Alphanum4 { code, issuer }) => {
+                let credit = alphanum_to_credit(&code, issuer)?;
+                Ok(::Asset::Credit(credit))
+            }
+            Asset::Alphanum12(Alphanum12 { code, issuer }) => {
+                let credit = alphanum_to_credit(&code, issuer)?;
+                Ok(::Asset::Credit(credit))
             }
         }
     }
@@ -64,43 +78,22 @@ fn alphanum_to_credit(code: &[u8], issuer: PublicKey) -> Result<::CreditAsset> {
         pos += 1;
     }
     let code_ = str::from_utf8(&code[..pos])?;
-    let issuer_ = issuer.try_into()?;
+    let issuer_ = ::PublicKey::from_xdr(issuer)?;
     Ok(::CreditAsset::new(code_.to_string(), issuer_)?)
-}
-
-impl TryFrom<Asset> for ::Asset {
-    type Err = Error;
-
-    fn try_from(asset: Asset) -> result::Result<Self, Error> {
-        match asset {
-            Asset::Native => Ok(::Asset::Native),
-            Asset::Alphanum4(Alphanum4 { code, issuer }) => {
-                let credit = alphanum_to_credit(&code, issuer)?;
-                Ok(::Asset::Credit(credit))
-            }
-            Asset::Alphanum12(Alphanum12 { code, issuer }) => {
-                let credit = alphanum_to_credit(&code, issuer)?;
-                Ok(::Asset::Credit(credit))
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use try_from::TryInto;
     use {Asset, CreditAsset, PublicKey};
-    use xdr;
+    use {FromXdr, ToXdr};
 
     #[test]
     fn test_asset_native() {
         let asset = Asset::Native;
-        let xdr_asset = xdr::Asset::from(asset.clone());
-        let encoded = xdr::to_base64(&xdr_asset).unwrap();
+        let encoded = asset.clone().to_base64().unwrap();
         assert_eq!(encoded, "AAAAAA==");
-        let decoded = xdr::from_base64::<xdr::Asset>(&encoded).unwrap();
-        let asset_back: Asset = decoded.try_into().unwrap();
-        assert_eq!(asset_back, asset);
+        let decoded = Asset::from_base64(&encoded).unwrap();
+        assert_eq!(decoded, asset);
     }
 
     #[test]
@@ -128,12 +121,10 @@ mod tests {
         ];
         for &(code, expected) in test_cases.iter() {
             let asset = Asset::credit(code.to_string(), issuer.clone()).unwrap();
-            let xdr_asset = xdr::Asset::from(asset.clone());
-            let encoded = xdr::to_base64(&xdr_asset).unwrap();
+            let encoded = asset.clone().to_base64().unwrap();
             assert_eq!(encoded, expected);
-            let decoded = xdr::from_base64::<xdr::Asset>(&encoded).unwrap();
-            let asset_back: Asset = decoded.try_into().unwrap();
-            assert_eq!(asset_back, asset);
+            let decoded = Asset::from_base64(&encoded).unwrap();
+            assert_eq!(decoded, asset);
         }
     }
 }

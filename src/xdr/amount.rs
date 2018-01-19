@@ -1,5 +1,4 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::ser::SerializeTuple;
 use amount::{Price, Stroops};
 
 impl Serialize for Stroops {

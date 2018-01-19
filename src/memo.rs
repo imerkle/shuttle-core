@@ -6,8 +6,8 @@ const MAX_MEMO_TEXT_LEN: usize = 28;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Memo {
     None,
-    Id(u64),
     Text(String),
+    Id(u64),
     Hash([u8; 32]),
     Return([u8; 32]),
 }

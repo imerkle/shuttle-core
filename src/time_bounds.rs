@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UnixTimestamp(i64);
+pub struct UnixTimestamp(pub i64);
 
 /// A time range for the validity of an operation.
 #[derive(Debug, Clone, PartialEq, Eq)]

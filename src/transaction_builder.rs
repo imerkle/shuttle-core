@@ -1,6 +1,5 @@
 use account::Account;
 use time_bounds::TimeBounds;
-use amount::Stroops;
 use memo::Memo;
 use transaction::Transaction;
 use operation::Operation;

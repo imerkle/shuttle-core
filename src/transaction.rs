@@ -1,9 +1,8 @@
-use account::Account;
 use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
 use network::Network;
-use keypair::{KeyPair, PublicKey};
+use keypair::KeyPair;
 use signature::DecoratedSignature;
 use operation::Operation;
 use crypto;
@@ -66,7 +65,7 @@ impl Transaction {
         SignedTransaction::new(payload, decorated_signature)
     }
 
-    pub fn signature_base(self, network: &Network) -> Vec<u8> {
+    pub fn signature_base(self, _network: &Network) -> Vec<u8> {
         unimplemented!()
     }
 }
