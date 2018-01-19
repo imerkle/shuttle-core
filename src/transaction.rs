@@ -2,8 +2,11 @@ use account::Account;
 use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
+use network::Network;
 use keypair::{KeyPair, PublicKey};
+use signature::DecoratedSignature;
 use operation::Operation;
+use crypto;
 
 const BASE_FEE: Stroops = Stroops(100);
 
@@ -54,5 +57,40 @@ impl Transaction {
 
     pub fn operations(&self) -> &Vec<Operation> {
         &self.operations
+    }
+
+    pub fn sign(self, keypair: &KeyPair, network: &Network) -> SignedTransaction {
+        let signature_base = self.signature_base(&network);
+        let payload = crypto::hash(&signature_base);
+        let decorated_signature = keypair.sign_decorated(&payload);
+        SignedTransaction::new(payload, decorated_signature)
+    }
+
+    pub fn signature_base(self, network: &Network) -> Vec<u8> {
+        unimplemented!()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SignedTransaction {
+    payload: Vec<u8>,
+    signatures: Vec<DecoratedSignature>,
+}
+
+impl SignedTransaction {
+    pub fn new(payload: Vec<u8>, signature: DecoratedSignature) -> SignedTransaction {
+        SignedTransaction {
+            payload,
+            signatures: vec![signature],
+        }
+    }
+
+    pub fn sign(&mut self, keypair: &KeyPair) {
+        let new_signature = keypair.sign_decorated(&self.payload);
+        self.signatures.push(new_signature);
+    }
+
+    pub fn signatures(&self) -> &Vec<DecoratedSignature> {
+        &self.signatures
     }
 }
