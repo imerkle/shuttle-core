@@ -4,6 +4,7 @@ description = "Library to read, write, hash, and sign the xdr structures used in
 version = "0.3.0"
 authors = ["Francesco Ceccon <francesco@ceccon.me>"]
 license = "Apache-2.0"
+documentation = "https://docs.rs/shuttle-core"
 repository = "https://github.com/fracek/shuttle-core"
 readme = "README.md"
 keywords = ["stellar", "blockchain"]

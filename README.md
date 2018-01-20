@@ -1,12 +1,16 @@
 shuttle-core
 ============
 
+[![Crates.io](https://img.shields.io/crates/v/shuttle-core.svg)](https://crates.io/crates/shuttle-core)
+[![Released API docs](https://docs.rs/shuttle-core/badge.svg)](http://docs.rs/shuttle-core)
+
 `shuttle-core` is a library to read, write, hash, and sign the xdr structures used in the Stellar Network.
 
-Installation
-------------
+Get Started
+-----------
 
-Add `shuttle-core = "0.2.0"` to your project `Cargo.toml` file.
+ 1. Grab the latest version from [crates.io](https://crates.io/crates/shuttle-core)
+ 2. Read the [documentation](https://docs.rs/shuttle-core)
 
 
 License
