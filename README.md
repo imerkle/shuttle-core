@@ -1,6 +1,7 @@
 shuttle-core
 ============
 
+[![Build Status](https://travis-ci.org/fracek/shuttle-core.svg?branch=master)](https://travis-ci.org/fracek/shuttle-core)
 [![Crates.io](https://img.shields.io/crates/v/shuttle-core.svg)](https://crates.io/crates/shuttle-core)
 [![Released API docs](https://docs.rs/shuttle-core/badge.svg)](http://docs.rs/shuttle-core)
 
