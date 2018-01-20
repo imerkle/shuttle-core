@@ -66,38 +66,68 @@ impl Transaction {
 
     pub fn sign(self, keypair: &KeyPair, network: &Network) -> Result<SignedTransaction> {
         let mut sig = SignedTransaction::new(self, network)?;
-        sig.sign(keypair);
+        sig.sign(keypair)?;
         Ok(sig)
-    }
-
-    pub fn signature_base(self, network: &Network) -> Result<Vec<u8>> {
-        let payload = TransactionSignaturePayload::new(&network, self);
-        let mut out = Vec::new();
-        payload.to_writer(&mut out)?;
-        Ok(crypto::hash(&out))
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct SignedTransaction {
-    payload: Vec<u8>,
+    network_id: Vec<u8>,
     transaction: Transaction,
     signatures: Vec<DecoratedSignature>,
 }
 
 impl SignedTransaction {
     pub fn new(transaction: Transaction, network: &Network) -> Result<SignedTransaction> {
-        let payload = transaction.clone().signature_base(network)?;
         Ok(SignedTransaction {
-            payload,
+            network_id: network.network_id().clone(),
             transaction,
             signatures: Vec::new(),
         })
     }
 
-    pub fn sign(&mut self, keypair: &KeyPair) {
-        let new_signature = keypair.sign_decorated(&self.payload);
+    pub fn new_without_network(
+        transaction: Transaction,
+        signatures: Vec<DecoratedSignature>,
+    ) -> SignedTransaction {
+        SignedTransaction {
+            network_id: Vec::new(),
+            transaction,
+            signatures,
+        }
+    }
+
+    pub fn sign(&mut self, keypair: &KeyPair) -> Result<()> {
+        let sig_payload = TransactionSignaturePayload {
+            network_id: &self.network_id,
+            transaction: &self.transaction,
+        };
+        let mut payload = Vec::new();
+        sig_payload.to_writer(&mut payload)?;
+        let hashed_payload = crypto::hash(&payload);
+        let new_signature = keypair.sign_decorated(&hashed_payload);
         self.signatures.push(new_signature);
+        Ok(())
+    }
+
+    pub fn hash(&self) -> Result<Vec<u8>> {
+        let payload = self.signature_base()?;
+        Ok(crypto::hash(&payload))
+    }
+
+    pub fn signature_base(&self) -> Result<Vec<u8>> {
+        let sig_payload = TransactionSignaturePayload {
+            network_id: &self.network_id,
+            transaction: &self.transaction,
+        };
+        let mut payload = Vec::new();
+        sig_payload.to_writer(&mut payload)?;
+        Ok(payload)
+    }
+
+    pub fn transaction(&self) -> &Transaction {
+        &self.transaction
     }
 
     pub fn signatures(&self) -> &Vec<DecoratedSignature> {
@@ -106,17 +136,7 @@ impl SignedTransaction {
 }
 
 #[derive(Debug)]
-pub struct TransactionSignaturePayload {
-    pub network_id: Vec<u8>,
-    pub transaction: Transaction,
-}
-
-impl TransactionSignaturePayload {
-    pub fn new(network: &Network, transaction: Transaction) -> Self {
-        let network_id = network.network_id();
-        TransactionSignaturePayload {
-            network_id,
-            transaction,
-        }
-    }
+pub struct TransactionSignaturePayload<'a> {
+    pub network_id: &'a Vec<u8>,
+    pub transaction: &'a Transaction,
 }

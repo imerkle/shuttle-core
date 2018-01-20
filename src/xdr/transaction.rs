@@ -1,3 +1,7 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Error as SerdeError;
+use std::result;
+use serde_xdr::opaque_data;
 use xdr::PublicKey;
 use xdr::TimeBounds;
 use xdr::Memo;
@@ -65,41 +69,51 @@ impl<'de> FromXdr<'de, Transaction> for ::Transaction {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TaggedTransaction {
-    EnvelopeTypeTx(Transaction),
+#[derive(Debug, Clone)]
+pub enum EnvelopeType {
+    Tx = 2,
+}
+
+impl Serialize for EnvelopeType {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i32(self.clone() as i32)
+    }
+}
+
+impl<'de> Deserialize<'de> for EnvelopeType {
+    fn deserialize<D>(deserializer: D) -> result::Result<EnvelopeType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let case = i32::deserialize(deserializer)?;
+        match case {
+            2 => Ok(EnvelopeType::Tx),
+            t => Err(D::Error::custom(format!("Unknown EnvelopeType {}", t))),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionSignaturePayload {
-    network_id: [u8; 32],
-    tagged_transaction: TaggedTransaction,
+    #[serde(with = "opaque_data::fixed_length")] network_id: [u8; 32],
+    envelope_type: EnvelopeType,
+    transaction: Transaction,
 }
 
-impl ToXdr<TransactionSignaturePayload> for ::TransactionSignaturePayload {
+impl<'a> ToXdr<TransactionSignaturePayload> for ::TransactionSignaturePayload<'a> {
     fn to_xdr(&self) -> Result<TransactionSignaturePayload> {
         let mut network_id = [0; 32];
         if self.network_id.len() > 32 {
             return Err(Error::TBD);
         }
         network_id.copy_from_slice(&self.network_id);
-        let tagged_transaction = TaggedTransaction::EnvelopeTypeTx(self.transaction.to_xdr()?);
+        let transaction = self.transaction.to_xdr()?;
         Ok(TransactionSignaturePayload {
             network_id,
-            tagged_transaction,
-        })
-    }
-}
-
-impl<'de> FromXdr<'de, TransactionSignaturePayload> for ::TransactionSignaturePayload {
-    fn from_xdr(payload: TransactionSignaturePayload) -> Result<Self> {
-        let mut network_id = Vec::new();
-        network_id.extend_from_slice(&payload.network_id);
-        let transaction = match payload.tagged_transaction {
-            TaggedTransaction::EnvelopeTypeTx(transaction) => ::Transaction::from_xdr(transaction)?,
-        };
-        Ok(::TransactionSignaturePayload {
-            network_id,
+            envelope_type: EnvelopeType::Tx,
             transaction,
         })
     }
@@ -107,21 +121,54 @@ impl<'de> FromXdr<'de, TransactionSignaturePayload> for ::TransactionSignaturePa
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionEnvelope {
-    transaction: Transaction,
-    signatures: Vec<DecoratedSignature>,
+    pub transaction: Transaction,
+    pub signatures: Vec<DecoratedSignature>,
+}
+
+impl ToXdr<TransactionEnvelope> for ::SignedTransaction {
+    fn to_xdr(&self) -> Result<TransactionEnvelope> {
+        let transaction = self.transaction().to_xdr()?;
+        let signatures_res: Result<Vec<_>> = self.signatures().iter().map(|s| s.to_xdr()).collect();
+        let signatures = signatures_res?;
+        Ok(TransactionEnvelope {
+            transaction,
+            signatures,
+        })
+    }
+}
+
+impl<'de> FromXdr<'de, TransactionEnvelope> for ::SignedTransaction {
+    fn from_xdr(envelope: TransactionEnvelope) -> Result<::SignedTransaction> {
+        let transaction = ::Transaction::from_xdr(envelope.transaction)?;
+        let signatures_res: Result<Vec<_>> = envelope
+            .signatures
+            .into_iter()
+            .map(|s| ::DecoratedSignature::from_xdr(s))
+            .collect();
+        let signatures = signatures_res?;
+        Ok(::SignedTransaction::new_without_network(
+            transaction,
+            signatures,
+        ))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use {Account, Amount, Asset, KeyPair, Memo};
+    use {Account, Amount, Asset, KeyPair, Memo, Network};
     use {OperationBuilder, Transaction, TransactionBuilder};
     use {FromXdr, ToXdr};
+    use serde::{Deserialize, Serialize};
 
-    fn do_it(tx: Transaction, expected: &str) {
+    fn do_it<'de, U, T>(tx: T, expected: &str)
+    where
+        U: Deserialize<'de> + Serialize,
+        T: ToXdr<U> + FromXdr<'de, U>,
+    {
         let encoded = tx.to_base64().unwrap();
         assert_eq!(encoded, expected);
-        let decoded = Transaction::from_base64(&encoded).unwrap();
+        let decoded = T::from_base64(&encoded).unwrap();
     }
 
     #[test]
@@ -143,5 +190,31 @@ mod tests {
             .with_memo(Memo::Id(123))
             .build();
         do_it(tx, "AAAAAGPgfnO/mUw71s3yUF9r1CS8IOgym90QLaqUHgG8D4URAAAAyAAAAAAAAAPoAAAAAAAAAAIAAAAAAAAAewAAAAIAAAAAAAAACQAAAAAAAAABAAAAAGPgfnO/mUw71s3yUF9r1CS8IOgym90QLaqUHgG8D4URAAAAAAAAAABJjViAAAAAAA==");
+    }
+
+    #[test]
+    fn test_signed_transaction() {
+        let kp = KeyPair::from_secret_seed(
+            "SDFRU2NGDPXYIY67BVS6L6W4OY33HCFCEJQ73TZZPR3IDYVVI7BVPV5Q",
+        ).unwrap();
+
+        let mut account = Account::new(kp.public_key().clone(), 999);
+        let tx = TransactionBuilder::new(&mut account)
+            .operation(OperationBuilder::inflation().build())
+            .build();
+        let network = Network::public_network();
+        let mut signed_tx = tx.sign(&kp, &network).unwrap();
+        let expected_signature_base = vec![
+            0x7A, 0xC3, 0x39, 0x97, 0x54, 0x4E, 0x31, 0x75, 0xD2, 0x66, 0xBD, 0x2, 0x24, 0x39,
+            0xB2, 0x2C, 0xDB, 0x16, 0x50, 0x8C, 0x1, 0x16, 0x3F, 0x26, 0xE5, 0xCB, 0x2A, 0x3E,
+            0x10, 0x45, 0xA9, 0x79, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x0, 0x63, 0xE0, 0x7E, 0x73,
+            0xBF, 0x99, 0x4C, 0x3B, 0xD6, 0xCD, 0xF2, 0x50, 0x5F, 0x6B, 0xD4, 0x24, 0xBC, 0x20,
+            0xE8, 0x32, 0x9B, 0xDD, 0x10, 0x2D, 0xAA, 0x94, 0x1E, 0x1, 0xBC, 0xF, 0x85, 0x11, 0x0,
+            0x0, 0x0, 0x64, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0xE8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+            0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9, 0x0, 0x0, 0x0,
+            0x0,
+        ];
+        assert_eq!(signed_tx.signature_base().unwrap(), expected_signature_base);
+        do_it(signed_tx, "AAAAAGPgfnO/mUw71s3yUF9r1CS8IOgym90QLaqUHgG8D4URAAAAZAAAAAAAAAPoAAAAAAAAAAAAAAABAAAAAAAAAAkAAAAAAAAAAbwPhREAAABAkqlNirgebGCMoc0kdl7FLMl/k2q36LZN1EI7+kfY5xiGg9Mb0txYsIZY3zx1RREQywp/wgpLTpfHqIcnDs2HAg==");
     }
 }

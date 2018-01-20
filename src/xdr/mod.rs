@@ -13,7 +13,7 @@ mod xdr_trait;
 
 use self::asset::Asset;
 use self::keypair::PublicKey;
-use self::memo::{Memo, MemoHash};
+use self::memo::Memo;
 use self::signature::DecoratedSignature;
 use self::time_bounds::TimeBounds;
 use self::operation::Operation;

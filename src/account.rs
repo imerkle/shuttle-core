@@ -1,4 +1,4 @@
-use keypair::{KeyPair, PublicKey};
+use keypair::PublicKey;
 
 /// Account represents a single account in the Stellar network and its sequence
 /// number.

@@ -1,4 +1,5 @@
 use sodiumoxide::crypto::sign::ed25519;
+use error::{Error, Result};
 use keypair::{PublicKey, SecretKey};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,6 +11,11 @@ impl Signature {
     pub fn sign(secret: &SecretKey, data: &[u8]) -> Signature {
         let sig = ed25519::sign_detached(data, &secret.inner());
         Signature { sig }
+    }
+
+    pub fn from_slice(sb: &[u8]) -> Result<Signature> {
+        let sig = ed25519::Signature::from_slice(sb).ok_or(Error::TBD)?;
+        Ok(Signature { sig })
     }
 
     pub fn len(&self) -> usize {
@@ -30,7 +36,7 @@ impl Signature {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SignatureHint([u8; 4]);
+pub struct SignatureHint(pub [u8; 4]);
 
 impl SignatureHint {
     pub fn from_public_key(pk: &PublicKey) -> SignatureHint {

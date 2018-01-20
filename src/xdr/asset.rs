@@ -1,18 +1,18 @@
 use std::str;
-use serde_xdr;
+use serde_xdr::opaque_data;
 use error::Result;
 use xdr::keypair::PublicKey;
 use xdr::{FromXdr, ToXdr};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alphanum4 {
-    #[serde(with = "serde_xdr::opaque_data::fixed_length")] code: [u8; 4],
+    #[serde(with = "opaque_data::fixed_length")] code: [u8; 4],
     issuer: PublicKey,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alphanum12 {
-    #[serde(with = "serde_xdr::opaque_data::fixed_length")] code: [u8; 12],
+    #[serde(with = "opaque_data::fixed_length")] code: [u8; 12],
     issuer: PublicKey,
 }
 

@@ -53,7 +53,7 @@ pub use self::operation_builder::{CreateAccountOperationBuilder,
                                   ManageDataOperationBuilder, ManageOfferOperationBuilder,
                                   OperationBuilder, PathPaymentOperationBuilder,
                                   PaymentOperationBuilder};
-pub use self::transaction::{Transaction, TransactionSignaturePayload};
+pub use self::transaction::{SignedTransaction, Transaction, TransactionSignaturePayload};
 pub use self::transaction_builder::TransactionBuilder;
 
 pub use self::xdr::{FromXdr, ToXdr};
