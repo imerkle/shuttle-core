@@ -17,7 +17,11 @@ impl Asset {
         Asset::Native
     }
 
-    pub fn credit(code: String, issuer: PublicKey) -> Result<Asset> {
+    pub fn credit<S>(code: S, issuer: PublicKey) -> Result<Asset>
+    where
+        S: Into<String>,
+    {
+        let code = code.into();
         let inner = CreditAsset::new(code, issuer)?;
         Ok(Asset::Credit(inner))
     }
