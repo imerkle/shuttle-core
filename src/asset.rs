@@ -13,10 +13,12 @@ pub enum Asset {
 }
 
 impl Asset {
+    /// Create the native asset: Lumens.
     pub fn native() -> Asset {
         Asset::Native
     }
 
+    /// Create the asset with `code` issued by `issuer`.
     pub fn credit<S>(code: S, issuer: PublicKey) -> Result<Asset>
     where
         S: Into<String>,
@@ -35,18 +37,23 @@ pub struct CreditAsset {
 }
 
 impl CreditAsset {
+    /// Create new credit asset with `code` and `issuer.
+    ///
+    /// Code must be shorter than 12 characters.
     pub fn new(code: String, issuer: PublicKey) -> Result<CreditAsset> {
         if code.len() > MAX_CODE_LEN {
-            Err(Error::TBD)
+            Err(Error::InvalidAssetCode)
         } else {
             Ok(CreditAsset { code, issuer })
         }
     }
 
+    /// Return the asset code.
     pub fn code(&self) -> &str {
         &self.code
     }
 
+    /// Return the asset issuer.
     pub fn issuer(&self) -> &PublicKey {
         &self.issuer
     }

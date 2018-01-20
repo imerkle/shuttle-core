@@ -10,22 +10,27 @@ pub struct Network {
 }
 
 impl Network {
+    /// Create new network with `passphrase`.
     pub fn new(passphrase: String) -> Network {
         Network { passphrase }
     }
 
+    /// Create new network with the same passphrase as SDF public network.
     pub fn public_network() -> Network {
         Self::new(PUBLIC_PASSPHRASE.to_string())
     }
 
+    /// Create new network with the same passphrase as SDF test network.
     pub fn test_network() -> Network {
         Self::new(TEST_PASSPHRASE.to_string())
     }
 
+    /// Return the network passphrase.
     pub fn passphrase(&self) -> &str {
         &self.passphrase
     }
 
+    /// Return the network id, which is the hash of the network passphrase.
     pub fn network_id(&self) -> Vec<u8> {
         crypto::hash(self.passphrase.as_bytes())
     }

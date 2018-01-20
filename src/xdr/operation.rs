@@ -336,7 +336,7 @@ fn from_inflation(source: Option<::PublicKey>) -> Result<::Operation> {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use {InflationOperationBuilder, Operation, OperationBuilder};
+    use {Operation, OperationBuilder};
     use {Amount, Asset, Price, PublicKey};
     use {FromXdr, ToXdr};
 

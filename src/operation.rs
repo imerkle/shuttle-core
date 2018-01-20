@@ -96,17 +96,29 @@ pub struct InflationOperation {
     pub source: Option<PublicKey>,
 }
 
+/// An operation that mutates the ledger.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operation {
+    /// Create new account.
     CreateAccount(CreateAccountOperation),
+    /// Send payment.
     Payment(PaymentOperation),
+    /// Send specified payment to account, optionally through path.
     PathPayment(PathPaymentOperation),
+    /// Create, update, and delete offer.
     ManageOffer(ManageOfferOperation),
+    /// Create an offer that won't consume a counter offer.
     CreatePassiveOffer(CreatePassiveOfferOperation),
+    /// Set or clear account flags.
     SetOptions,
+    /// Add, update, or remove a trust line.
     ChangeTrust,
+    /// Allow another account to hold the account credit for an asset.
     AllowTrust,
+    /// Transfer balance to destination account.
     AccountMerge,
+    /// Generate inflation.
     Inflation(InflationOperation),
+    /// Add, update, or remove account data.
     ManageData(ManageDataOperation),
 }

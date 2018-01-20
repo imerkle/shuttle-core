@@ -15,24 +15,27 @@ pub struct Amount {
 }
 
 impl Amount {
+    /// Create from amount specified in stroops.
     pub fn from_stroops(stroops: Stroops) -> Result<Amount> {
-        let data = BigInt::from_i64(stroops.0).ok_or(Error::TBD)?;
+        let data = BigInt::from_i64(stroops.0).ok_or(Error::InvalidStroopsAmount)?;
         let inner = BigDecimal::new(data, STELLAR_SCALE);
         Ok(Amount { inner })
     }
 
+    /// Convert to stroops.
     pub fn as_stroops(&self) -> Result<Stroops> {
         self.clone().into_stroops()
     }
 
+    /// Convert into stroops.
     pub fn into_stroops(self) -> Result<Stroops> {
         let (data, exp) = self.inner.into_bigint_and_exponent();
         if exp != STELLAR_SCALE {
-            return Err(Error::TBD); // wrong scale
+            return Err(Error::InvalidAmountScale);
         }
         match data.to_i64() {
             Some(stroops) => Ok(Stroops::new(stroops)),
-            None => Err(Error::TBD),
+            None => Err(Error::InvalidStroopsAmount),
         }
     }
 }
@@ -45,7 +48,7 @@ impl FromStr for Amount {
         // Check we don't lose precision
         let (_, scale) = inner.as_bigint_and_exponent();
         if scale > STELLAR_SCALE {
-            Err(Error::TBD)
+            Err(Error::InvalidAmountScale)
         } else {
             let scaled_inner = inner.with_scale(STELLAR_SCALE);
             Ok(Amount {
@@ -60,6 +63,7 @@ impl FromStr for Amount {
 pub struct Stroops(pub i64);
 
 impl Stroops {
+    /// Create from stroops.
     pub fn new(amount: i64) -> Stroops {
         Stroops(amount)
     }
@@ -81,6 +85,7 @@ pub struct Price {
 }
 
 impl Price {
+    /// Create from numerator and denominator.
     pub fn new(numerator: i32, denominator: i32) -> Price {
         Price {
             numerator,
@@ -88,10 +93,12 @@ impl Price {
         }
     }
 
+    /// Return the price numerator.
     pub fn numerator(&self) -> i32 {
         self.numerator
     }
 
+    /// Return the price denominator.
     pub fn denominator(&self) -> i32 {
         self.denominator
     }

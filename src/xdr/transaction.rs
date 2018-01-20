@@ -103,11 +103,12 @@ pub struct TransactionSignaturePayload {
     transaction: Transaction,
 }
 
-impl<'a> ToXdr<TransactionSignaturePayload> for ::TransactionSignaturePayload<'a> {
+impl<'a> ToXdr<TransactionSignaturePayload>
+    for super::super::transaction::TransactionSignaturePayload<'a> {
     fn to_xdr(&self) -> Result<TransactionSignaturePayload> {
         let mut network_id = [0; 32];
         if self.network_id.len() > 32 {
-            return Err(Error::TBD);
+            return Err(Error::InvalidNetworkId);
         }
         network_id.copy_from_slice(&self.network_id);
         let transaction = self.transaction.to_xdr()?;
@@ -157,7 +158,7 @@ impl<'de> FromXdr<'de, TransactionEnvelope> for ::SignedTransaction {
 mod tests {
     use std::str::FromStr;
     use {Account, Amount, Asset, KeyPair, Memo, Network};
-    use {OperationBuilder, Transaction, TransactionBuilder};
+    use {OperationBuilder, TransactionBuilder};
     use {FromXdr, ToXdr};
     use serde::{Deserialize, Serialize};
 
@@ -168,7 +169,7 @@ mod tests {
     {
         let encoded = tx.to_base64().unwrap();
         assert_eq!(encoded, expected);
-        let decoded = T::from_base64(&encoded).unwrap();
+        let _decoded = T::from_base64(&encoded).unwrap();
     }
 
     #[test]
@@ -203,7 +204,7 @@ mod tests {
             .operation(OperationBuilder::inflation().build())
             .build();
         let network = Network::public_network();
-        let mut signed_tx = tx.sign(&kp, &network).unwrap();
+        let signed_tx = tx.sign(&kp, &network).unwrap();
         let expected_signature_base = vec![
             0x7A, 0xC3, 0x39, 0x97, 0x54, 0x4E, 0x31, 0x75, 0xD2, 0x66, 0xBD, 0x2, 0x24, 0x39,
             0xB2, 0x2C, 0xDB, 0x16, 0x50, 0x8C, 0x1, 0x16, 0x3F, 0x26, 0xE5, 0xCB, 0x2A, 0x3E,

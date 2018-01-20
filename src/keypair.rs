@@ -5,46 +5,55 @@ use network::Network;
 use crypto;
 use strkey;
 
+/// The public key of the account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PublicKey {
     key: ed25519::PublicKey,
 }
 
 impl PublicKey {
-    pub fn from_account_id(data: &str) -> Result<PublicKey> {
-        let bytes = strkey::decode_account_id(&data)?;
+    /// Create from `account_id`, e.g. `GB3KJPLFUYN5VL6R3GU3EGCGVCKFDSD7BEDX42HWG5BWFKB3KQGJJRMA`.
+    pub fn from_account_id(account_id: &str) -> Result<PublicKey> {
+        let bytes = strkey::decode_account_id(&account_id)?;
         Self::from_slice(&bytes)
     }
 
+    /// Create from raw bytes.
     pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
-        let key = ed25519::PublicKey::from_slice(&data).ok_or(Error::TBD)?;
+        let key = ed25519::PublicKey::from_slice(&data).ok_or(Error::InvalidPublicKey)?;
         Ok(PublicKey { key })
     }
 
+    /// Return the public key as string, starting with `G`.
     pub fn to_account_id(&self) -> Result<String> {
         strkey::encode_account_id(&self.key.0)
     }
 
+    /// Return the inner key buffer.
     pub fn buf(&self) -> &[u8] {
         &self.key.0
     }
 
+    /// Return the inner key.
     pub fn inner(&self) -> &ed25519::PublicKey {
         &self.key
     }
 }
 
+/// The secret key of the account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecretKey {
     key: ed25519::SecretKey,
 }
 
 impl SecretKey {
+    /// Return the inner key.
     pub fn inner(&self) -> &ed25519::SecretKey {
         &self.key
     }
 }
 
+/// The secret and public key pair of the account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyPair {
     public: PublicKey,
@@ -52,21 +61,25 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
+    /// Create the key pair from the secret seed, e.g. `SDAKFNYEIAORZKKCYRILFQKLLOCNPL5SWJ3YY5NM3ZH6GJSZGXHZEPQS`.
     pub fn from_secret_seed(data: &str) -> Result<KeyPair> {
         let bytes = strkey::decode_secret_seed(&data)?;
         Self::from_seed_bytes(&bytes)
     }
 
+    /// Create a random key pair.
     pub fn random() -> Result<KeyPair> {
         let seed = crypto::random_bytes(32);
         Self::from_seed_bytes(&seed)
     }
 
+    /// Create a key pair from the `network` passphrase.
     pub fn from_network(network: &Network) -> Result<KeyPair> {
         let bytes = network.network_id();
         Self::from_seed_bytes(&bytes)
     }
 
+    /// Crete a key pair from raw bytes.
     pub fn from_seed_bytes(data: &[u8]) -> Result<KeyPair> {
         let the_seed = ed25519::Seed::from_slice(&data).ok_or(Error::InvalidSeed)?;
         let (pk, sk) = ed25519::keypair_from_seed(&the_seed);
@@ -75,28 +88,34 @@ impl KeyPair {
         Ok(KeyPair { public, secret })
     }
 
+    /// Return the public key.
     pub fn public_key(&self) -> &PublicKey {
         &self.public
     }
 
+    /// Return the secret key.
     pub fn secret_key(&self) -> &SecretKey {
         &self.secret
     }
 
+    /// Sign the `message`.
     pub fn sign(&self, message: &[u8]) -> Signature {
         Signature::sign(&self.secret, &message)
     }
 
+    /// Sign the `message` together with the signature hint.
     pub fn sign_decorated(&self, message: &[u8]) -> DecoratedSignature {
         let hint = self.signature_hint();
         let signature = self.sign(message);
         DecoratedSignature::new(hint, signature)
     }
 
+    /// Verify the `signature` against the `message`.
     pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
         signature.verify(&self.public, &message)
     }
 
+    /// Return the signature hint, that is the last 4 bytes of the public key.
     pub fn signature_hint(&self) -> SignatureHint {
         SignatureHint::from_public_key(&self.public)
     }

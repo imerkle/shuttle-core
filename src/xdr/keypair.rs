@@ -15,7 +15,7 @@ pub enum PublicKey {
 impl PublicKey {
     pub fn new(key: &[u8]) -> Result<PublicKey> {
         if key.len() > 32 {
-            return Err(Error::TBD);
+            return Err(Error::InvalidPublicKey);
         }
         let mut buf = [0; 32];
         buf.copy_from_slice(&key);

@@ -9,6 +9,7 @@ pub struct Account {
 }
 
 impl Account {
+    /// Create with `account_id` and `sequence` number.
     pub fn new(account_id: PublicKey, sequence: u64) -> Account {
         Account {
             account_id,
@@ -16,6 +17,7 @@ impl Account {
         }
     }
 
+    /// Return the account public key.
     pub fn account_id(&self) -> &PublicKey {
         &self.account_id
     }

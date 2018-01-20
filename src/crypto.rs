@@ -11,6 +11,10 @@ pub fn random_bytes(size: usize) -> Vec<u8> {
     randombytes::randombytes(size)
 }
 
+/// Initialize the sodium library and chooses faster version of the primitives
+/// if possible.
+///
+/// `init` also makes `KeyPair::random()` thread-safe.
 pub fn init() -> bool {
     sodiumoxide::init()
 }

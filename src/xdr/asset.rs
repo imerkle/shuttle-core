@@ -84,7 +84,7 @@ fn alphanum_to_credit(code: &[u8], issuer: PublicKey) -> Result<::CreditAsset> {
 
 #[cfg(test)]
 mod tests {
-    use {Asset, CreditAsset, PublicKey};
+    use {Asset, PublicKey};
     use {FromXdr, ToXdr};
 
     #[test]

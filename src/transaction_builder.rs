@@ -4,6 +4,7 @@ use memo::Memo;
 use transaction::Transaction;
 use operation::Operation;
 
+/// `Transaction` builder.
 #[derive(Debug)]
 pub struct TransactionBuilder<'a> {
     source: &'a mut Account,
@@ -13,6 +14,7 @@ pub struct TransactionBuilder<'a> {
 }
 
 impl<'a> TransactionBuilder<'a> {
+    /// Create a transaction builder with `source` account.
     pub fn new(source: &'a mut Account) -> TransactionBuilder<'a> {
         TransactionBuilder {
             source: source,
@@ -22,25 +24,30 @@ impl<'a> TransactionBuilder<'a> {
         }
     }
 
+    /// Set the transaction time bounds.
     pub fn with_time_bounds(mut self, time_bounds: TimeBounds) -> Self {
         self.time_bounds = Some(time_bounds);
         self
     }
 
+    /// Set the transaction memo.
     pub fn with_memo(mut self, memo: Memo) -> Self {
         self.memo = memo;
         self
     }
 
+    /// Add one operation to the transaction.
     pub fn operation(mut self, op: Operation) -> Self {
         self.operations.push(op);
         self
     }
 
+    /// Return the number of operations currently in the transaction.
     pub fn operations_len(&self) -> usize {
         self.operations.len()
     }
 
+    /// Return the transaction.
     pub fn build(self) -> Transaction {
         let keypair = self.source.account_id().clone();
         let sequence = self.source.increment_sequence();

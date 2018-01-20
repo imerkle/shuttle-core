@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use byteorder::{ByteOrder, LittleEndian};
 use base32;
 use crc16::{State, XMODEM};
