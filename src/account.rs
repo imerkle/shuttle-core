@@ -4,21 +4,20 @@ use keypair::{KeyPair, PublicKey};
 /// number.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Account {
-    keypair: KeyPair,
+    account_id: PublicKey,
     sequence: u64,
 }
 
 impl Account {
-    pub fn new(keypair: KeyPair, sequence: u64) -> Account {
-        Account { keypair, sequence }
+    pub fn new(account_id: PublicKey, sequence: u64) -> Account {
+        Account {
+            account_id,
+            sequence,
+        }
     }
 
-    pub fn keypair(&self) -> &KeyPair {
-        &self.keypair
-    }
-
-    pub fn public_key(&self) -> &PublicKey {
-        &self.keypair.public_key()
+    pub fn account_id(&self) -> &PublicKey {
+        &self.account_id
     }
 
     /// Increments the sequence number, returns the old sequence number.
@@ -41,7 +40,7 @@ mod tests {
     #[test]
     fn test_increment_sequence() {
         let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp, 999);
+        let mut account = Account::new(kp.public_key().clone(), 999);
         let seq = account.increment_sequence();
         assert_eq!(seq, 1000);
         assert_eq!(account.sequence(), 1000);

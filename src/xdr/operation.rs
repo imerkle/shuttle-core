@@ -77,27 +77,27 @@ pub struct ManageDataOperation {
 }
 
 impl ToXdr<Operation> for ::Operation {
-    fn to_xdr(self) -> Result<Operation> {
-        match self {
-            ::Operation::CreateAccount(op) => to_create_account(op),
-            ::Operation::Payment(op) => to_payment(op),
-            ::Operation::PathPayment(op) => to_path_payment(op),
-            ::Operation::ManageOffer(op) => to_manage_offer(op),
-            ::Operation::CreatePassiveOffer(op) => to_create_passive_offer(op),
-            ::Operation::ManageData(op) => to_manage_data(op),
-            ::Operation::Inflation(op) => to_inflation(op),
+    fn to_xdr(&self) -> Result<Operation> {
+        match *self {
+            ::Operation::CreateAccount(ref op) => to_create_account(op),
+            ::Operation::Payment(ref op) => to_payment(op),
+            ::Operation::PathPayment(ref op) => to_path_payment(op),
+            ::Operation::ManageOffer(ref op) => to_manage_offer(op),
+            ::Operation::CreatePassiveOffer(ref op) => to_create_passive_offer(op),
+            ::Operation::ManageData(ref op) => to_manage_data(op),
+            ::Operation::Inflation(ref op) => to_inflation(op),
             _ => unimplemented!(),
         }
     }
 }
 
-fn to_create_account(create: ::CreateAccountOperation) -> Result<Operation> {
+fn to_create_account(create: &::CreateAccountOperation) -> Result<Operation> {
     let source = match create.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let destination = create.destination.to_xdr()?;
-    let balance = create.balance.into_stroops()?;
+    let balance = create.balance.as_stroops()?;
     let inner = OperationInner::CreateAccount(CreateAccountOperation {
         destination,
         balance,
@@ -105,14 +105,14 @@ fn to_create_account(create: ::CreateAccountOperation) -> Result<Operation> {
     Ok(Operation::new(source, inner))
 }
 
-fn to_payment(payment: ::PaymentOperation) -> Result<Operation> {
+fn to_payment(payment: &::PaymentOperation) -> Result<Operation> {
     let source = match payment.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let destination = payment.destination.to_xdr()?;
     let asset = payment.asset.to_xdr()?;
-    let amount = payment.amount.into_stroops()?;
+    let amount = payment.amount.as_stroops()?;
     let inner = OperationInner::Payment(PaymentOperation {
         destination,
         asset,
@@ -121,18 +121,18 @@ fn to_payment(payment: ::PaymentOperation) -> Result<Operation> {
     Ok(Operation::new(source, inner))
 }
 
-fn to_path_payment(payment: ::PathPaymentOperation) -> Result<Operation> {
+fn to_path_payment(payment: &::PathPaymentOperation) -> Result<Operation> {
     let source = match payment.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
 
     let destination = payment.destination.to_xdr()?;
     let send_asset = payment.send_asset.to_xdr()?;
-    let send_max = payment.send_max.into_stroops()?;
+    let send_max = payment.send_max.as_stroops()?;
     let dest_asset = payment.dest_asset.to_xdr()?;
-    let dest_amount = payment.dest_amount.into_stroops()?;
-    let path_res: Result<Vec<_>> = payment.path.into_iter().map(|p| p.to_xdr()).collect();
+    let dest_amount = payment.dest_amount.as_stroops()?;
+    let path_res: Result<Vec<_>> = payment.path.iter().map(|p| p.to_xdr()).collect();
     let path = path_res?;
 
     let inner = OperationInner::PathPayment(PathPaymentOperation {
@@ -146,15 +146,15 @@ fn to_path_payment(payment: ::PathPaymentOperation) -> Result<Operation> {
     Ok(Operation::new(source, inner))
 }
 
-fn to_manage_offer(manage: ::ManageOfferOperation) -> Result<Operation> {
+fn to_manage_offer(manage: &::ManageOfferOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let selling = manage.selling.to_xdr()?;
     let buying = manage.buying.to_xdr()?;
-    let amount = manage.amount.into_stroops()?;
-    let price = manage.price;
+    let amount = manage.amount.as_stroops()?;
+    let price = manage.price.clone();
     let offer_id = manage.offer_id;
     let inner = OperationInner::ManageOffer(ManageOfferOperation {
         selling,
@@ -166,15 +166,15 @@ fn to_manage_offer(manage: ::ManageOfferOperation) -> Result<Operation> {
     Ok(Operation::new(source, inner))
 }
 
-fn to_create_passive_offer(manage: ::CreatePassiveOfferOperation) -> Result<Operation> {
+fn to_create_passive_offer(manage: &::CreatePassiveOfferOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let selling = manage.selling.to_xdr()?;
     let buying = manage.buying.to_xdr()?;
-    let amount = manage.amount.into_stroops()?;
-    let price = manage.price;
+    let amount = manage.amount.as_stroops()?;
+    let price = manage.price.clone();
     let inner = OperationInner::CreatePassiveOffer(CreatePassiveOfferOperation {
         selling,
         buying,
@@ -184,22 +184,22 @@ fn to_create_passive_offer(manage: ::CreatePassiveOfferOperation) -> Result<Oper
     Ok(Operation::new(source, inner))
 }
 
-fn to_manage_data(manage: ::ManageDataOperation) -> Result<Operation> {
+fn to_manage_data(manage: &::ManageDataOperation) -> Result<Operation> {
     let source = match manage.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let inner = OperationInner::ManageData(ManageDataOperation {
-        name: manage.name,
-        value: manage.value,
+        name: manage.name.clone(),
+        value: manage.value.clone(),
     });
     Ok(Operation::new(source, inner))
 }
 
-fn to_inflation(inflation: ::InflationOperation) -> Result<Operation> {
+fn to_inflation(inflation: &::InflationOperation) -> Result<Operation> {
     let source = match inflation.source {
         None => None,
-        Some(pk) => Some(pk.to_xdr()?),
+        Some(ref pk) => Some(pk.to_xdr()?),
     };
     let inner = OperationInner::Inflation;
     Ok(Operation::new(source, inner))

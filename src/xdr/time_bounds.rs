@@ -8,7 +8,7 @@ pub struct TimeBounds {
 }
 
 impl ToXdr<TimeBounds> for ::TimeBounds {
-    fn to_xdr(self) -> Result<TimeBounds> {
+    fn to_xdr(&self) -> Result<TimeBounds> {
         let lower = match *self.lower() {
             None => 0,
             Some(ref t) => t.0 as u64,

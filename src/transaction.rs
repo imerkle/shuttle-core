@@ -2,26 +2,28 @@ use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
 use network::Network;
-use keypair::KeyPair;
+use keypair::{KeyPair, PublicKey};
 use signature::DecoratedSignature;
 use operation::Operation;
+use error::Result;
+use xdr::ToXdr;
 use crypto;
 
 const BASE_FEE: Stroops = Stroops(100);
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
-    source: KeyPair,
-    sequence: u64,
-    fee: Stroops,
-    time_bounds: Option<TimeBounds>,
-    memo: Memo,
-    operations: Vec<Operation>,
+    pub source: PublicKey,
+    pub sequence: u64,
+    pub fee: Stroops,
+    pub time_bounds: Option<TimeBounds>,
+    pub memo: Memo,
+    pub operations: Vec<Operation>,
 }
 
 impl Transaction {
     pub fn new(
-        source: KeyPair,
+        source: PublicKey,
         sequence: u64,
         time_bounds: Option<TimeBounds>,
         memo: Memo,
@@ -36,6 +38,10 @@ impl Transaction {
             memo,
             operations,
         }
+    }
+
+    pub fn source(&self) -> &PublicKey {
+        &self.source
     }
 
     pub fn base_fee(&self) -> &Stroops {
@@ -58,30 +64,35 @@ impl Transaction {
         &self.operations
     }
 
-    pub fn sign(self, keypair: &KeyPair, network: &Network) -> SignedTransaction {
-        let signature_base = self.signature_base(&network);
-        let payload = crypto::hash(&signature_base);
-        let decorated_signature = keypair.sign_decorated(&payload);
-        SignedTransaction::new(payload, decorated_signature)
+    pub fn sign(self, keypair: &KeyPair, network: &Network) -> Result<SignedTransaction> {
+        let mut sig = SignedTransaction::new(self, network)?;
+        sig.sign(keypair);
+        Ok(sig)
     }
 
-    pub fn signature_base(self, _network: &Network) -> Vec<u8> {
-        unimplemented!()
+    pub fn signature_base(self, network: &Network) -> Result<Vec<u8>> {
+        let payload = TransactionSignaturePayload::new(&network, self);
+        let mut out = Vec::new();
+        payload.to_writer(&mut out)?;
+        Ok(crypto::hash(&out))
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct SignedTransaction {
     payload: Vec<u8>,
+    transaction: Transaction,
     signatures: Vec<DecoratedSignature>,
 }
 
 impl SignedTransaction {
-    pub fn new(payload: Vec<u8>, signature: DecoratedSignature) -> SignedTransaction {
-        SignedTransaction {
+    pub fn new(transaction: Transaction, network: &Network) -> Result<SignedTransaction> {
+        let payload = transaction.clone().signature_base(network)?;
+        Ok(SignedTransaction {
             payload,
-            signatures: vec![signature],
-        }
+            transaction,
+            signatures: Vec::new(),
+        })
     }
 
     pub fn sign(&mut self, keypair: &KeyPair) {
@@ -91,5 +102,21 @@ impl SignedTransaction {
 
     pub fn signatures(&self) -> &Vec<DecoratedSignature> {
         &self.signatures
+    }
+}
+
+#[derive(Debug)]
+pub struct TransactionSignaturePayload {
+    pub network_id: Vec<u8>,
+    pub transaction: Transaction,
+}
+
+impl TransactionSignaturePayload {
+    pub fn new(network: &Network, transaction: Transaction) -> Self {
+        let network_id = network.network_id();
+        TransactionSignaturePayload {
+            network_id,
+            transaction,
+        }
     }
 }

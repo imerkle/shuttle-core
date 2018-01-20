@@ -17,11 +17,11 @@ pub struct MemoHash {
 }
 
 impl ToXdr<Memo> for ::Memo {
-    fn to_xdr(self) -> Result<Memo> {
-        match self {
+    fn to_xdr(&self) -> Result<Memo> {
+        match *self {
             ::Memo::None => Ok(Memo::None),
             ::Memo::Id(id) => Ok(Memo::Id(id)),
-            ::Memo::Text(s) => Ok(Memo::Text(s)),
+            ::Memo::Text(ref s) => Ok(Memo::Text(s.clone())),
             ::Memo::Hash(buf) => Ok(Memo::Hash(MemoHash { buf })),
             ::Memo::Return(buf) => Ok(Memo::Return(MemoHash { buf })),
         }

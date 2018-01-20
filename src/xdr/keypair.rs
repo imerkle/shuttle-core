@@ -24,7 +24,7 @@ impl PublicKey {
 }
 
 impl ToXdr<PublicKey> for ::PublicKey {
-    fn to_xdr(self) -> Result<PublicKey> {
+    fn to_xdr(&self) -> Result<PublicKey> {
         PublicKey::new(self.buf())
     }
 }

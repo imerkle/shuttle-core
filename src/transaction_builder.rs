@@ -32,7 +32,7 @@ impl<'a> TransactionBuilder<'a> {
         self
     }
 
-    pub fn push_operation(mut self, op: Operation) -> Self {
+    pub fn operation(mut self, op: Operation) -> Self {
         self.operations.push(op);
         self
     }
@@ -42,7 +42,7 @@ impl<'a> TransactionBuilder<'a> {
     }
 
     pub fn build(self) -> Transaction {
-        let keypair = self.source.keypair().clone();
+        let keypair = self.source.account_id().clone();
         let sequence = self.source.increment_sequence();
         Transaction::new(
             keypair,
@@ -65,14 +65,14 @@ mod tests {
     #[test]
     fn test_builder_success() {
         let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp, 999);
+        let mut account = Account::new(kp.public_key().clone(), 999);
 
         let tx0 = TransactionBuilder::new(&mut account)
-            .push_operation(OperationBuilder::inflation().build())
+            .operation(OperationBuilder::inflation().build())
             .build();
 
         let tx1 = TransactionBuilder::new(&mut account)
-            .push_operation(OperationBuilder::inflation().build())
+            .operation(OperationBuilder::inflation().build())
             .build();
 
         assert_eq!(tx0.operations().len(), 1);
@@ -83,10 +83,10 @@ mod tests {
     #[test]
     fn test_builder_memo() {
         let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp, 999);
+        let mut account = Account::new(kp.public_key().clone(), 999);
 
         let tx = TransactionBuilder::new(&mut account)
-            .push_operation(OperationBuilder::inflation().build())
+            .operation(OperationBuilder::inflation().build())
             .with_memo(Memo::text("TEST STRING").unwrap())
             .build();
         assert_eq!(*tx.memo(), Memo::Text("TEST STRING".to_string()));

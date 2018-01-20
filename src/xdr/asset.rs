@@ -24,10 +24,10 @@ pub enum Asset {
 }
 
 impl ToXdr<Asset> for ::Asset {
-    fn to_xdr(self) -> Result<Asset> {
-        match self {
+    fn to_xdr(&self) -> Result<Asset> {
+        match *self {
             ::Asset::Native => Ok(Asset::Native),
-            ::Asset::Credit(credit_asset) => {
+            ::Asset::Credit(ref credit_asset) => {
                 let code = credit_asset.code();
                 let len = code.len();
                 if len <= 4 {

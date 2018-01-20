@@ -5,14 +5,14 @@ use serde_xdr;
 use base64;
 
 pub trait ToXdr<T: Serialize>: Sized {
-    fn to_xdr(self) -> Result<T>;
+    fn to_xdr(&self) -> Result<T>;
 
-    fn to_writer<W: Write>(self, mut w: &mut W) -> Result<()> {
+    fn to_writer<W: Write>(&self, mut w: &mut W) -> Result<()> {
         let x = self.to_xdr()?;
         Ok(serde_xdr::to_writer(&mut w, &x)?)
     }
 
-    fn to_base64(self) -> Result<String> {
+    fn to_base64(&self) -> Result<String> {
         let mut buf = Vec::new();
         self.to_writer(&mut buf)?;
         Ok(base64::encode(&buf))
