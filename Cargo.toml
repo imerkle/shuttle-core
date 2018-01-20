@@ -1,7 +1,7 @@
 [package]
 name = "shuttle-core"
 description = "Library to read, write, hash, and sign the xdr structures used in the Stellar Network."
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Francesco Ceccon <francesco@ceccon.me>"]
 license = "Apache-2.0"
 repository = "https://github.com/fracek/shuttle-core"
