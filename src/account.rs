@@ -1,4 +1,4 @@
-use keypair::PublicKey;
+use crypto::PublicKey;
 
 /// Account represents a single account in the Stellar network and its sequence
 /// number.
@@ -37,7 +37,7 @@ impl Account {
 #[cfg(test)]
 mod tests {
     use super::Account;
-    use keypair::KeyPair;
+    use crypto::KeyPair;
 
     #[test]
     fn test_increment_sequence() {

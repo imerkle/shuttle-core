@@ -1,5 +1,5 @@
 use error::{Error, Result};
-use keypair::PublicKey;
+use crypto::PublicKey;
 
 const MAX_CODE_LEN: usize = 12;
 
@@ -62,7 +62,7 @@ impl CreditAsset {
 #[cfg(test)]
 mod tests {
     use super::CreditAsset;
-    use keypair::PublicKey;
+    use crypto::PublicKey;
 
     #[test]
     fn test_error_code_too_long() {

@@ -2,7 +2,7 @@ use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
 use network::Network;
-use keypair::{KeyPair, PublicKey};
+use crypto::{KeyPair, PublicKey};
 use signature::DecoratedSignature;
 use operation::Operation;
 use error::Result;

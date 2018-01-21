@@ -1,7 +1,7 @@
 use operation::{CreateAccountOperation, CreatePassiveOfferOperation, InflationOperation,
                 ManageDataOperation, ManageOfferOperation, Operation, PathPaymentOperation,
                 PaymentOperation};
-use keypair::PublicKey;
+use crypto::PublicKey;
 use asset::Asset;
 use amount::{Amount, Price};
 

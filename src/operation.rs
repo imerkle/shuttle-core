@@ -1,6 +1,6 @@
 use amount::{Amount, Price};
 use asset::Asset;
-use keypair::PublicKey;
+use crypto::PublicKey;
 
 /// Create and fund a new account.
 #[derive(Debug, Clone, PartialEq, Eq)]

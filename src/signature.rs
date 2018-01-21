@@ -1,6 +1,6 @@
 use sodiumoxide::crypto::sign::ed25519;
 use error::{Error, Result};
-use keypair::{PublicKey, SecretKey};
+use crypto::{PublicKey, SecretKey};
 
 /// A signature.
 #[derive(Debug, Clone, PartialEq, Eq)]

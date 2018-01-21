@@ -82,13 +82,8 @@ extern crate serde_xdr;
 
 mod error;
 
-// Keys & Crypto
-mod crypto;
-mod strkey;
-mod keypair;
-mod signature;
+pub mod crypto;
 
-// Stellar
 mod amount;
 mod account;
 mod asset;
@@ -97,15 +92,14 @@ mod network;
 mod time_bounds;
 mod operation;
 mod operation_builder;
+mod signature;
 mod transaction;
 mod transaction_builder;
 
 mod xdr;
 
-pub use self::crypto::init;
+pub use self::crypto::{init, KeyPair, PublicKey, SecretKey};
 pub use self::error::{Error, Result};
-pub use self::keypair::{KeyPair, PublicKey, SecretKey};
-pub use self::signature::{DecoratedSignature, Signature, SignatureHint};
 pub use self::amount::{Amount, Price, Stroops};
 pub use self::account::Account;
 pub use self::asset::{Asset, CreditAsset};
@@ -121,6 +115,7 @@ pub use self::operation_builder::{CreateAccountOperationBuilder,
                                   ManageDataOperationBuilder, ManageOfferOperationBuilder,
                                   OperationBuilder, PathPaymentOperationBuilder,
                                   PaymentOperationBuilder};
+pub use self::signature::{DecoratedSignature, Signature, SignatureHint};
 pub use self::transaction::{SignedTransaction, Transaction};
 pub use self::transaction_builder::TransactionBuilder;
 

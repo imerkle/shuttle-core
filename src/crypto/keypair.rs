@@ -2,8 +2,8 @@ use sodiumoxide::crypto::sign::ed25519;
 use error::{Error, Result};
 use signature::{DecoratedSignature, Signature, SignatureHint};
 use network::Network;
+use crypto::strkey;
 use crypto;
-use strkey;
 
 /// The public key of the account.
 #[derive(Debug, Clone, PartialEq, Eq)]
