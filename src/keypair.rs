@@ -25,7 +25,7 @@ impl PublicKey {
     }
 
     /// Return the public key as string, starting with `G`.
-    pub fn to_account_id(&self) -> Result<String> {
+    pub fn account_id(&self) -> Result<String> {
         strkey::encode_account_id(&self.key.0)
     }
 
@@ -178,7 +178,7 @@ mod tests {
 
         for &(secret, address) in keypairs.iter() {
             let keypair = KeyPair::from_secret_seed(&secret).unwrap();
-            let account_id = keypair.public_key().to_account_id().unwrap();
+            let account_id = keypair.public_key().account_id().unwrap();
             assert_eq!(&account_id, address);
         }
     }
@@ -187,7 +187,7 @@ mod tests {
     fn test_from_network() {
         let network = Network::public_network();
         let kp = KeyPair::from_network(&network).unwrap();
-        let public = kp.public_key().to_account_id().unwrap();
+        let public = kp.public_key().account_id().unwrap();
         assert_eq!(
             public,
             "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7"
