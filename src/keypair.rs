@@ -51,6 +51,11 @@ impl SecretKey {
     pub fn inner(&self) -> &ed25519::SecretKey {
         &self.key
     }
+
+    /// Return the secret key as String, starting with `S`.
+    pub fn secret_seed(&self) -> Result<String> {
+        strkey::encode_secret_seed(&self.key.0)
+    }
 }
 
 /// The secret and public key pair of the account.
