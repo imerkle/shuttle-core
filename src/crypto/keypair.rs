@@ -43,6 +43,7 @@ impl PublicKey {
 /// The secret key of the account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecretKey {
+    /// A field.
     pub key: ed25519::SecretKey,
 }
 
