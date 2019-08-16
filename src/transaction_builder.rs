@@ -67,12 +67,13 @@ mod tests {
     use Memo;
     use TransactionBuilder;
     use OperationBuilder;
-    use ed25519_dalek::Keypair;
     use crypto;
     #[test]
     fn test_builder_success() {
         let seed = crypto::random_bytes(32);
-        let kp = Keypair::from_bytes(&seed).unwrap();      
+        let secret = ed25519_dalek::SecretKey::from_bytes(&seed).unwrap();
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        let kp = ed25519_dalek::Keypair{secret, public};  
         let mut account = Account::new(kp.public, 999);
 
         let tx0 = TransactionBuilder::new(&mut account)
@@ -91,7 +92,9 @@ mod tests {
     #[test]
     fn test_builder_memo() {
         let seed = crypto::random_bytes(32);
-        let kp = Keypair::from_bytes(&seed).unwrap();     
+        let secret = ed25519_dalek::SecretKey::from_bytes(&seed).unwrap();
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        let kp = ed25519_dalek::Keypair{secret, public};  
         let mut account = Account::new(kp.public, 999);
 
         let tx = TransactionBuilder::new(&mut account)

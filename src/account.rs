@@ -37,12 +37,14 @@ impl Account {
 #[cfg(test)]
 mod tests {
     use super::Account;
-    use ed25519_dalek::Keypair;
     use crypto;
     #[test]
     fn test_increment_sequence() {
-        let seed = crypto::random_bytes(64);
-        let kp = Keypair::from_bytes(&seed).unwrap();
+        let seed = crypto::random_bytes(32);
+        let secret = ed25519_dalek::SecretKey::from_bytes(&seed).unwrap();
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        let kp = ed25519_dalek::Keypair{secret, public};
+
         let mut account = Account::new(kp.public, 999);
         let seq = account.increment_sequence();
         assert_eq!(seq, 1000);

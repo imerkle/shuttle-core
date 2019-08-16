@@ -65,7 +65,9 @@ impl SecretKey {
 /// Get keypair from secret string
 pub fn from_secret_seed(data: &str) -> Result<ed25519_dalek::Keypair> {
     let bytes = strkey::decode_secret_seed(&data)?;
-    let keypair = ed25519_dalek::Keypair::from_bytes(&bytes).ok().ok_or(Error::InvalidSeed)?;
+    let secret = ed25519_dalek::SecretKey::from_bytes(&bytes).unwrap();
+    let public = ed25519_dalek::PublicKey::from(&secret);
+    let keypair = ed25519_dalek::Keypair{secret, public};
     Ok(keypair)
 }
 /// sign a message
@@ -211,7 +213,10 @@ mod tests {
     fn test_from_network() {
         let network = Network::public_network();
         let bytes: Vec<u8> = network.network_id();
-        let kp = ed25519_dalek::Keypair::from_bytes(&bytes).unwrap();
+        let secret = ed25519_dalek::SecretKey::from_bytes(&bytes).unwrap();
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        let kp = ed25519_dalek::Keypair{secret, public};
+
         let public = account_id(&kp.public).unwrap();
         assert_eq!(
             public,
