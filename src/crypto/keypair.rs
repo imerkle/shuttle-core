@@ -1,71 +1,84 @@
-use sodiumoxide::crypto::sign::ed25519;
 use error::{Error, Result};
-use signature::{DecoratedSignature, Signature, SignatureHint};
-use network::Network;
+use signature::{DecoratedSignature, SignatureHint};
+//use network::Network;
 use crypto::strkey;
-use crypto;
+//use crypto;
+use ed25519_dalek::{PublicKey, SecretKey};
 
-/// The public key of the account.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PublicKey {
-    key: ed25519::PublicKey,
+/// Create from `account_id`, e.g. `GB3KJPLFUYN5VL6R3GU3EGCGVCKFDSD7BEDX42HWG5BWFKB3KQGJJRMA`.
+pub fn from_account_id(account_id: &str) -> Result<PublicKey> {
+    let bytes = strkey::decode_account_id(&account_id)?;
+    from_slice(&bytes)
 }
-
+/// Create from raw bytes.
+pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
+    let key = ed25519_dalek::PublicKey::from_bytes(&data).ok().ok_or(Error::InvalidPublicKey)?;
+    Ok(key)
+}
+/// Get account id from public key
+pub fn account_id(public: &ed25519_dalek::PublicKey) -> Result<String> {
+    strkey::encode_account_id(public.as_bytes())
+}
+/*
 impl PublicKey {
-    /// Create from `account_id`, e.g. `GB3KJPLFUYN5VL6R3GU3EGCGVCKFDSD7BEDX42HWG5BWFKB3KQGJJRMA`.
-    pub fn from_account_id(account_id: &str) -> Result<PublicKey> {
-        let bytes = strkey::decode_account_id(&account_id)?;
-        Self::from_slice(&bytes)
-    }
-
-    /// Create from raw bytes.
-    pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
-        let key = ed25519::PublicKey::from_slice(&data).ok_or(Error::InvalidPublicKey)?;
-        Ok(PublicKey { key })
-    }
 
     /// Return the public key as string, starting with `G`.
     pub fn account_id(&self) -> Result<String> {
-        strkey::encode_account_id(&self.key.0)
+        strkey::encode_account_id(&self.key.to_bytes())
     }
 
     /// Return the inner key buffer.
     pub fn buf(&self) -> &[u8] {
-        &self.key.0
-    }
-
-    /// Return the inner key.
-    pub fn inner(&self) -> &ed25519::PublicKey {
-        &self.key
-    }
+        self.key.as_bytes()SecretKey
+    }SecretKey
+SecretKey
+    /// Return the inner key.SecretKey
+    pub fn inner(&self) -> &ed255SecretKey19_dalek::PublicKey {
+        &self.keySecretKey
+    }SecretKey
 }
-
+*/
+/// Get secret string from secret key
+pub fn secret_seed(key: &SecretKey) -> Result<String> {
+    strkey::encode_secret_seed(key.as_bytes())
+}
+/*
 /// The secret key of the account.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct SecretKey {
     /// A field.
-    pub key: ed25519::SecretKey,
+    pub key: ed25519_dalek::SecretKey,
 }
 
 impl SecretKey {
     /// Return the inner key.
-    pub fn inner(&self) -> &ed25519::SecretKey {
+    pub fn inner(&self) -> &ed25519_dalek::SecretKey {
         &self.key
     }
 
     /// Return the secret key as String, starting with `S`.
     pub fn secret_seed(&self) -> Result<String> {
-        strkey::encode_secret_seed(&self.key.0)
+        strkey::encode_secret_seed(&self.key.to_bytes())
     }
 }
-
-/// The secret and public key pair of the account.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KeyPair {
-    public: PublicKey,
-    secret: SecretKey,
+*/
+/// Get keypair from secret string
+pub fn from_secret_seed(data: &str) -> Result<ed25519_dalek::Keypair> {
+    let bytes = strkey::decode_secret_seed(&data)?;
+    let keypair = ed25519_dalek::Keypair::from_bytes(&bytes).ok().ok_or(Error::InvalidSeed)?;
+    Ok(keypair)
 }
-
+/// sign a message
+pub fn sign_decorated(kp: &ed25519_dalek::Keypair, message: &[u8]) -> DecoratedSignature {
+    let hint = signature_hint(&kp);
+    let signature = kp.sign(message);
+    DecoratedSignature::new(hint, signature)
+}
+/// signature hint
+pub fn signature_hint(kp: &ed25519_dalek::Keypair) -> SignatureHint {
+    SignatureHint::from_public_key(&kp.public)
+}
+/*
 impl KeyPair {
     /// Create the key pair from the secret seed, e.g. `SDAKFNYEIAORZKKCYRILFQKLLOCNPL5SWJ3YY5NM3ZH6GJSZGXHZEPQS`.
     pub fn from_secret_seed(data: &str) -> Result<KeyPair> {
@@ -87,10 +100,10 @@ impl KeyPair {
 
     /// Crete a key pair from raw bytes.
     pub fn from_seed_bytes(data: &[u8]) -> Result<KeyPair> {
-        let the_seed = ed25519::Seed::from_slice(&data).ok_or(Error::InvalidSeed)?;
-        let (pk, sk) = ed25519::keypair_from_seed(&the_seed);
-        let public = PublicKey { key: pk };
-        let secret = SecretKey { key: sk };
+        let keypair = ed25519_dalek::Keypair::from_bytes(&data).ok().ok_or(Error::InvalidSeed)?;
+        let public = PublicKey { key: keypair.public };
+        let secret = SecretKey { key: keypair.secret };
+
         Ok(KeyPair { public, secret })
     }
 
@@ -106,7 +119,13 @@ impl KeyPair {
 
     /// Sign the `message`.
     pub fn sign(&self, message: &[u8]) -> Signature {
-        Signature::sign(&self.secret, &message)
+        let kp = ed25519_dalek::Keypair{
+            public: self.public.key,
+            secret: self.secret.key,
+        };        
+        Signature{sig: kp.sign(&message)}
+        
+        //Signature::sign(&self.secret, &message)
     }
 
     /// Sign the `message` together with the signature hint.
@@ -118,7 +137,12 @@ impl KeyPair {
 
     /// Verify the `signature` against the `message`.
     pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        signature.verify(&self.public, &message)
+        let kp = ed25519_dalek::Keypair{
+            secret: self.secret.key,
+            public: self.public.key,
+        };        
+        kp.verify(&message, &signature.sig).is_ok()
+        //signature.verify(&self.public, &message)
     }
 
     /// Return the signature hint, that is the last 4 bytes of the public key.
@@ -126,12 +150,11 @@ impl KeyPair {
         SignatureHint::from_public_key(&self.public)
     }
 }
-
+*/
 #[cfg(test)]
 mod tests {
-    use super::KeyPair;
+    use super::{from_secret_seed, account_id, sign_decorated};
     use Network;
-
     #[test]
     fn test_from_secret_seed() {
         let keypairs = [
@@ -178,8 +201,8 @@ mod tests {
         ];
 
         for &(secret, address) in keypairs.iter() {
-            let keypair = KeyPair::from_secret_seed(&secret).unwrap();
-            let account_id = keypair.public_key().account_id().unwrap();
+            let keypair = from_secret_seed(&secret).unwrap();
+            let account_id = account_id(&keypair.public).unwrap();
             assert_eq!(&account_id, address);
         }
     }
@@ -187,8 +210,9 @@ mod tests {
     #[test]
     fn test_from_network() {
         let network = Network::public_network();
-        let kp = KeyPair::from_network(&network).unwrap();
-        let public = kp.public_key().account_id().unwrap();
+        let bytes: Vec<u8> = network.network_id();
+        let kp = ed25519_dalek::Keypair::from_bytes(&bytes).unwrap();
+        let public = account_id(&kp.public).unwrap();
         assert_eq!(
             public,
             "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7"
@@ -198,7 +222,7 @@ mod tests {
     #[test]
     fn test_sign_and_verify() {
         let the_secret = "SD7X7LEHBNMUIKQGKPARG5TDJNBHKC346OUARHGZL5ITC6IJPXHILY36";
-        let kp = KeyPair::from_secret_seed(&the_secret).unwrap();
+        let kp = from_secret_seed(&the_secret).unwrap();
         let message = "test post please ignore".as_bytes();
         let sign = kp.sign(&message);
         let expected_sign = vec![
@@ -208,16 +232,16 @@ mod tests {
             0x21, 0x9, 0x28, 0xCA, 0x96, 0x11, 0x39, 0x03, 0x29, 0xC8, 0x40, 0xC8, 0xE5, 0x64,
             0xE7, 0xA0, 0x72, 0x16, 0x02, 0x7A, 0xB4, 0xA,
         ];
-        assert_eq!(sign.to_vec(), expected_sign);
-        assert!(kp.verify(&message, &sign));
+        assert_eq!(sign.to_bytes().to_vec(), expected_sign);
+        assert!(kp.verify(&message, &sign).is_ok());
     }
 
     #[test]
     fn test_sign_decorated() {
         let the_secret = "SD7X7LEHBNMUIKQGKPARG5TDJNBHKC346OUARHGZL5ITC6IJPXHILY36";
-        let kp = KeyPair::from_secret_seed(&the_secret).unwrap();
+        let kp = from_secret_seed(&the_secret).unwrap();
         let message = "test post please ignore".as_bytes();
-        let sign = kp.sign_decorated(&message);
+        let sign = sign_decorated(&kp, &message);
         assert_eq!(sign.hint().to_vec(), vec![0x0B, 0xFA, 0xD1, 0x34]);
     }
 

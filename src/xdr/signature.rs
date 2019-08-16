@@ -15,7 +15,7 @@ pub struct DecoratedSignature {
 impl ToXdr<DecoratedSignature> for ::DecoratedSignature {
     fn to_xdr(&self) -> Result<DecoratedSignature> {
         let hint = self.hint().0.clone();
-        let signature_vec = self.signature().to_vec();
+        let signature_vec = self.signature().to_bytes();
         let len = signature_vec.len();
         let mut signature0 = [0; 32];
         let mut signature1 = [0; 32];
@@ -40,16 +40,16 @@ impl<'de> FromXdr<'de, DecoratedSignature> for ::DecoratedSignature {
         let mut signature_slice = [0; 64];
         signature_slice[..32].copy_from_slice(&sig.signature0);
         signature_slice[32..].copy_from_slice(&sig.signature1);
-        let signature = ::signature::Signature::from_slice(&signature_slice)?;
+        let signature = ed25519_dalek::Signature::from_bytes(&signature_slice).unwrap();
         Ok(::DecoratedSignature::new(hint, signature))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use {DecoratedSignature, KeyPair};
+    use {DecoratedSignature};
     use {FromXdr, ToXdr};
-
+    use crypto::keypair::{from_secret_seed, sign_decorated};
     #[test]
     fn test_decorated_signature() {
         let message = vec![
@@ -57,10 +57,10 @@ mod tests {
             0xB2, 0xDC, 0xEF, 0xA8, 0xE5, 0x1F, 0x6C, 0xA4, 0xD3, 0x24, 0x3B, 0x2F, 0x27, 0x90,
             0xCA, 0x95, 0x48,
         ];
-        let kp = KeyPair::from_secret_seed(
+        let kp = from_secret_seed(
             "SDFRU2NGDPXYIY67BVS6L6W4OY33HCFCEJQ73TZZPR3IDYVVI7BVPV5Q",
         ).unwrap();
-        let sig = kp.sign_decorated(&message);
+        let sig = sign_decorated(&kp, &message);
         let encoded = sig.to_base64().unwrap();
         assert_eq!(encoded, "vA+FEQAAAECSqU2KuB5sYIyhzSR2XsUsyX+Tarfotk3UQjv6R9jnGIaD0xvS3FiwhljfPHVFERDLCn/CCktOl8eohycOzYcC");
         let decoded = DecoratedSignature::from_base64(&encoded).unwrap();

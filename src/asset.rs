@@ -1,5 +1,5 @@
 use error::{Error, Result};
-use crypto::PublicKey;
+use ed25519_dalek::PublicKey;
 
 const MAX_CODE_LEN: usize = 12;
 
@@ -62,12 +62,12 @@ impl CreditAsset {
 #[cfg(test)]
 mod tests {
     use super::CreditAsset;
-    use crypto::PublicKey;
+    use crypto::keypair::from_account_id;
 
     #[test]
     fn test_error_code_too_long() {
         let code = "1234567890123".to_string();
-        let pk = PublicKey::from_account_id(
+        let pk = from_account_id(
             "GCZHXL5HXQX5ABDM26LHYRCQZ5OJFHLOPLZX47WEBP3V2PF5AVFK2A5D",
         ).unwrap();
         let asset = CreditAsset::new(code, pk);

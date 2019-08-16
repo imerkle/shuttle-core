@@ -23,31 +23,32 @@ impl PublicKey {
     }
 }
 
-impl ToXdr<PublicKey> for ::PublicKey {
+impl ToXdr<PublicKey> for ed25519_dalek::PublicKey {
     fn to_xdr(&self) -> Result<PublicKey> {
-        PublicKey::new(self.buf())
+        PublicKey::new(self.as_bytes())
     }
 }
 
-impl<'de> FromXdr<'de, PublicKey> for ::PublicKey {
-    fn from_xdr(x: PublicKey) -> Result<::PublicKey> {
+impl<'de> FromXdr<'de, PublicKey> for ed25519_dalek::PublicKey {
+    fn from_xdr(x: PublicKey) -> Result<ed25519_dalek::PublicKey> {
         match x {
-            PublicKey::Ed25519(Ed25519 { key }) => Ok(::PublicKey::from_slice(&key)?),
+            PublicKey::Ed25519(Ed25519 { key }) => Ok(ed25519_dalek::PublicKey::from_bytes(&key).unwrap()),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use PublicKey;
+    use ed25519_dalek::PublicKey;
+    use crypto::keypair::from_account_id;
     use {FromXdr, ToXdr};
 
     #[test]
     fn test_public_key() {
-        let pk = PublicKey::from_account_id(
+        let pk = from_account_id(
             "GCEAKB6W342KSAQ6SVJYROF5W5FJTPZDDOSIOT3Y6CNQ3U2ZBAH7AQN3",
         ).unwrap();
-        let encoded = pk.clone().to_base64().unwrap();
+        let encoded = pk.to_base64().unwrap();
         assert_eq!(encoded, "AAAAAIgFB9bfNKkCHpVTiLi9t0qZvyMbpIdPePCbDdNZCA/w");
         let decoded = PublicKey::from_base64(&encoded).unwrap();
         assert_eq!(decoded, pk);

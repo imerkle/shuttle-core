@@ -2,13 +2,13 @@ use amount::Stroops;
 use time_bounds::TimeBounds;
 use memo::Memo;
 use network::Network;
-use crypto::{KeyPair, PublicKey};
+use ed25519_dalek::{Keypair, PublicKey};
 use signature::DecoratedSignature;
 use operation::Operation;
 use error::Result;
 use xdr::ToXdr;
 use crypto;
-
+use crypto::keypair::sign_decorated;
 const BASE_FEE: Stroops = Stroops(100);
 
 /// A transaction containing operations that change the ledger state.
@@ -79,7 +79,7 @@ impl Transaction {
     }
 
     /// Sign the transaction, returning a signed transaction that can be submitted to the `network`.
-    pub fn sign(self, keypair: &KeyPair, network: &Network) -> Result<SignedTransaction> {
+    pub fn sign(self, keypair: &Keypair, network: &Network) -> Result<SignedTransaction> {
         let mut sig = SignedTransaction::new(self, network)?;
         sig.sign(keypair)?;
         Ok(sig)
@@ -117,9 +117,9 @@ impl SignedTransaction {
     }
 
     /// Add one more signature to the transaction.
-    pub fn sign(&mut self, keypair: &KeyPair) -> Result<()> {
+    pub fn sign(&mut self, keypair: &Keypair) -> Result<()> {
         let payload = self.hash()?;
-        let new_signature = keypair.sign_decorated(&payload);
+        let new_signature = sign_decorated(keypair, &payload);
         self.signatures.push(new_signature);
         Ok(())
     }

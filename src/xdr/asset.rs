@@ -78,13 +78,14 @@ fn alphanum_to_credit(code: &[u8], issuer: PublicKey) -> Result<::CreditAsset> {
         pos += 1;
     }
     let code_ = str::from_utf8(&code[..pos])?;
-    let issuer_ = ::PublicKey::from_xdr(issuer)?;
+    let issuer_ = ed25519_dalek::PublicKey::from_xdr(issuer)?;
     Ok(::CreditAsset::new(code_.to_string(), issuer_)?)
 }
 
 #[cfg(test)]
 mod tests {
-    use {Asset, PublicKey};
+    use {Asset};
+    use crypto::keypair::from_account_id;
     use {FromXdr, ToXdr};
 
     #[test]
@@ -98,7 +99,7 @@ mod tests {
 
     #[test]
     fn test_asset_credit() {
-        let issuer = PublicKey::from_account_id(
+        let issuer = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
         let test_cases = [

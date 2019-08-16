@@ -47,7 +47,7 @@ impl ToXdr<Transaction> for ::Transaction {
 
 impl<'de> FromXdr<'de, Transaction> for ::Transaction {
     fn from_xdr(tx: Transaction) -> Result<::Transaction> {
-        let source = ::PublicKey::from_xdr(tx.source)?;
+        let source = ed25519_dalek::PublicKey::from_xdr(tx.source)?;
         let sequence = tx.sequence;
         let time_bounds = match tx.time_bounds {
             None => None,
@@ -157,10 +157,11 @@ impl<'de> FromXdr<'de, TransactionEnvelope> for ::SignedTransaction {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use {Account, Amount, Asset, KeyPair, Memo, Network};
+    use {Account, Amount, Asset, Memo, Network};
     use {OperationBuilder, TransactionBuilder};
     use {FromXdr, ToXdr};
     use serde::{Deserialize, Serialize};
+    use crypto::keypair::from_secret_seed;
 
     fn do_it<'de, U, T>(tx: T, expected: &str)
     where
@@ -174,16 +175,16 @@ mod tests {
 
     #[test]
     fn test_transaction() {
-        let kp = KeyPair::from_secret_seed(
+        let kp = from_secret_seed(
             "SDFRU2NGDPXYIY67BVS6L6W4OY33HCFCEJQ73TZZPR3IDYVVI7BVPV5Q",
         ).unwrap();
 
-        let mut account = Account::new(kp.public_key().clone(), 999);
+        let mut account = Account::new(kp.public, 999);
         let tx = TransactionBuilder::new(&mut account)
             .operation(OperationBuilder::inflation().build())
             .operation(
                 OperationBuilder::payment(
-                    kp.public_key().clone(),
+                    kp.public,
                     Asset::native(),
                     Amount::from_str("123.4").unwrap(),
                 ).build(),
@@ -195,11 +196,11 @@ mod tests {
 
     #[test]
     fn test_signed_transaction() {
-        let kp = KeyPair::from_secret_seed(
+        let kp = from_secret_seed(
             "SDFRU2NGDPXYIY67BVS6L6W4OY33HCFCEJQ73TZZPR3IDYVVI7BVPV5Q",
         ).unwrap();
 
-        let mut account = Account::new(kp.public_key().clone(), 999);
+        let mut account = Account::new(kp.public, 999);
         let tx = TransactionBuilder::new(&mut account)
             .operation(OperationBuilder::inflation().build())
             .build();

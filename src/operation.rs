@@ -1,6 +1,6 @@
 use amount::{Amount, Price};
 use asset::Asset;
-use crypto::PublicKey;
+use ed25519_dalek::PublicKey;
 
 /// Create and fund a new account.
 #[derive(Debug, Clone, PartialEq, Eq)]

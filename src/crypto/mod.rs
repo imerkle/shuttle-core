@@ -3,12 +3,12 @@ use sodiumoxide;
 use sodiumoxide::randombytes;
 use sodiumoxide::crypto::hash::sha256;
 
-mod keypair;
+/// keypair module
+pub mod keypair;
 mod strkey;
 mod ecdh;
 mod sha;
 
-pub use self::keypair::{KeyPair, PublicKey, SecretKey};
 pub use self::ecdh::{Curve25519Public, Curve25519Secret};
 pub use self::sha::{HmacSha256Key, HmacSha256Mac};
 

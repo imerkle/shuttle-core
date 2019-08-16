@@ -209,7 +209,7 @@ impl<'de> FromXdr<'de, Operation> for ::Operation {
     fn from_xdr(op: Operation) -> Result<::Operation> {
         let source = match op.source {
             None => None,
-            Some(pk) => Some(::PublicKey::from_xdr(pk)?),
+            Some(pk) => Some(ed25519_dalek::PublicKey::from_xdr(pk)?),
         };
         match op.inner {
             OperationInner::CreateAccount(inner) => from_create_account(source, inner),
@@ -225,10 +225,10 @@ impl<'de> FromXdr<'de, Operation> for ::Operation {
 }
 
 fn from_create_account(
-    source: Option<::PublicKey>,
+    source: Option<ed25519_dalek::PublicKey>,
     inner: CreateAccountOperation,
 ) -> Result<::Operation> {
-    let destination = ::PublicKey::from_xdr(inner.destination)?;
+    let destination = ed25519_dalek::PublicKey::from_xdr(inner.destination)?;
     let balance = Amount::from_stroops(inner.balance)?;
     Ok(::Operation::CreateAccount(
         operation::CreateAccountOperation {
@@ -239,8 +239,8 @@ fn from_create_account(
     ))
 }
 
-fn from_payment(source: Option<::PublicKey>, inner: PaymentOperation) -> Result<::Operation> {
-    let destination = ::PublicKey::from_xdr(inner.destination)?;
+fn from_payment(source: Option<ed25519_dalek::PublicKey>, inner: PaymentOperation) -> Result<::Operation> {
+    let destination = ed25519_dalek::PublicKey::from_xdr(inner.destination)?;
     let asset = ::Asset::from_xdr(inner.asset)?;
     let amount = Amount::from_stroops(inner.amount)?;
     Ok(::Operation::Payment(operation::PaymentOperation {
@@ -252,10 +252,10 @@ fn from_payment(source: Option<::PublicKey>, inner: PaymentOperation) -> Result<
 }
 
 fn from_path_payment(
-    source: Option<::PublicKey>,
+    source: Option<ed25519_dalek::PublicKey>,
     inner: PathPaymentOperation,
 ) -> Result<::Operation> {
-    let destination = ::PublicKey::from_xdr(inner.destination)?;
+    let destination = ed25519_dalek::PublicKey::from_xdr(inner.destination)?;
     let send_asset = ::Asset::from_xdr(inner.send_asset)?;
     let send_max = Amount::from_stroops(inner.send_max)?;
     let dest_asset = ::Asset::from_xdr(inner.dest_asset)?;
@@ -279,7 +279,7 @@ fn from_path_payment(
 }
 
 fn from_manage_offer(
-    source: Option<::PublicKey>,
+    source: Option<ed25519_dalek::PublicKey>,
     inner: ManageOfferOperation,
 ) -> Result<::Operation> {
     let selling = ::Asset::from_xdr(inner.selling)?;
@@ -298,7 +298,7 @@ fn from_manage_offer(
 }
 
 fn from_create_passive_offer(
-    source: Option<::PublicKey>,
+    source: Option<ed25519_dalek::PublicKey>,
     inner: CreatePassiveOfferOperation,
 ) -> Result<::Operation> {
     let selling = ::Asset::from_xdr(inner.selling)?;
@@ -317,7 +317,7 @@ fn from_create_passive_offer(
 }
 
 fn from_manage_data(
-    source: Option<::PublicKey>,
+    source: Option<ed25519_dalek::PublicKey>,
     inner: ManageDataOperation,
 ) -> Result<::Operation> {
     Ok(::Operation::ManageData(operation::ManageDataOperation {
@@ -327,7 +327,7 @@ fn from_manage_data(
     }))
 }
 
-fn from_inflation(source: Option<::PublicKey>) -> Result<::Operation> {
+fn from_inflation(source: Option<ed25519_dalek::PublicKey>) -> Result<::Operation> {
     Ok(::Operation::Inflation(operation::InflationOperation {
         source,
     }))
@@ -337,8 +337,9 @@ fn from_inflation(source: Option<::PublicKey>) -> Result<::Operation> {
 mod tests {
     use std::str::FromStr;
     use {Operation, OperationBuilder};
-    use {Amount, Asset, Price, PublicKey};
+    use {Amount, Asset, Price};
     use {FromXdr, ToXdr};
+    use crypto::keypair::from_account_id;
 
     fn do_it(op: Operation, expected: &str) {
         let encoded = op.clone().to_base64().unwrap();
@@ -356,7 +357,7 @@ mod tests {
     #[test]
     fn test_create_account() {
         let balance = Amount::from_str("20.0").unwrap();
-        let dest = PublicKey::from_account_id(
+        let dest = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
         let op = OperationBuilder::create_account(dest, balance).build();
@@ -368,7 +369,7 @@ mod tests {
 
     #[test]
     fn test_payment() {
-        let dest = PublicKey::from_account_id(
+        let dest = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
         let asset = Asset::credit("ABCD".to_string(), dest.clone()).unwrap();
@@ -382,7 +383,7 @@ mod tests {
 
     #[test]
     fn test_path_payment() {
-        let dest = PublicKey::from_account_id(
+        let dest = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
 
@@ -402,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_manage_offer() {
-        let issuer = PublicKey::from_account_id(
+        let issuer = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
 
@@ -418,7 +419,7 @@ mod tests {
 
     #[test]
     fn test_create_passive_offer() {
-        let issuer = PublicKey::from_account_id(
+        let issuer = from_account_id(
             "GCLDNMHZTEY6PUYQBYOVERBBZ2W3RLMYOSZWHAMY5R4YW2N6MM4LFA72",
         ).unwrap();
 

@@ -1,4 +1,4 @@
-use crypto::PublicKey;
+use ed25519_dalek::PublicKey;
 
 /// Account represents a single account in the Stellar network and its sequence
 /// number.
@@ -37,12 +37,13 @@ impl Account {
 #[cfg(test)]
 mod tests {
     use super::Account;
-    use crypto::KeyPair;
-
+    use ed25519_dalek::Keypair;
+    use crypto;
     #[test]
     fn test_increment_sequence() {
-        let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp.public_key().clone(), 999);
+        let seed = crypto::random_bytes(64);
+        let kp = Keypair::from_bytes(&seed).unwrap();
+        let mut account = Account::new(kp.public, 999);
         let seq = account.increment_sequence();
         assert_eq!(seq, 1000);
         assert_eq!(account.sequence(), 1000);

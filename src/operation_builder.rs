@@ -1,7 +1,7 @@
 use operation::{CreateAccountOperation, CreatePassiveOfferOperation, InflationOperation,
                 ManageDataOperation, ManageOfferOperation, Operation, PathPaymentOperation,
                 PaymentOperation};
-use crypto::PublicKey;
+use ed25519_dalek::PublicKey;
 use asset::Asset;
 use amount::{Amount, Price};
 

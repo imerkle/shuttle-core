@@ -64,15 +64,16 @@ impl<'a> TransactionBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use Account;
-    use KeyPair;
     use Memo;
     use TransactionBuilder;
     use OperationBuilder;
-
+    use ed25519_dalek::Keypair;
+    use crypto;
     #[test]
     fn test_builder_success() {
-        let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp.public_key().clone(), 999);
+        let seed = crypto::random_bytes(32);
+        let kp = Keypair::from_bytes(&seed).unwrap();      
+        let mut account = Account::new(kp.public, 999);
 
         let tx0 = TransactionBuilder::new(&mut account)
             .operation(OperationBuilder::inflation().build())
@@ -89,8 +90,9 @@ mod tests {
 
     #[test]
     fn test_builder_memo() {
-        let kp = KeyPair::random().unwrap();
-        let mut account = Account::new(kp.public_key().clone(), 999);
+        let seed = crypto::random_bytes(32);
+        let kp = Keypair::from_bytes(&seed).unwrap();     
+        let mut account = Account::new(kp.public, 999);
 
         let tx = TransactionBuilder::new(&mut account)
             .operation(OperationBuilder::inflation().build())

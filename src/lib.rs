@@ -73,6 +73,8 @@ extern crate crc16;
 extern crate num_bigint;
 extern crate num_traits;
 extern crate sodiumoxide;
+extern crate curve25519_dalek;
+extern crate ed25519_dalek;
 
 extern crate serde;
 extern crate serde_bytes;
@@ -98,7 +100,7 @@ mod transaction_builder;
 
 mod xdr;
 
-pub use self::crypto::{init, KeyPair, PublicKey, SecretKey};
+pub use self::crypto::{init};
 pub use self::error::{Error, Result};
 pub use self::amount::{Amount, Price, Stroops};
 pub use self::account::Account;
@@ -115,7 +117,7 @@ pub use self::operation_builder::{CreateAccountOperationBuilder,
                                   ManageDataOperationBuilder, ManageOfferOperationBuilder,
                                   OperationBuilder, PathPaymentOperationBuilder,
                                   PaymentOperationBuilder};
-pub use self::signature::{DecoratedSignature, Signature, SignatureHint};
+pub use self::signature::{DecoratedSignature, SignatureHint};
 pub use self::transaction::{SignedTransaction, Transaction};
 pub use self::transaction_builder::TransactionBuilder;
 

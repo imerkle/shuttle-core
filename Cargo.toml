@@ -23,3 +23,6 @@ serde = "1.0.98"
 serde_derive = "1.0.98"
 serde_bytes = "0.11.2"
 serde-xdr = "0.5.1"
+
+curve25519-dalek = "1.2.3"
+ed25519-dalek = {git = "https://github.com/dalek-cryptography/ed25519-dalek"}
