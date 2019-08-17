@@ -5,8 +5,7 @@ use sodiumoxide::crypto::hash::sha256;
 
 /// keypair module
 pub mod keypair;
-/// strkey module
-pub mod strkey;
+mod strkey;
 mod ecdh;
 mod sha;
 
