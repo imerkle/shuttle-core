@@ -12,31 +12,35 @@ const SHA256_HASH_VERSION_BYTE: u8 = 23 << 3; // X
 
 static ALPHABET: base32::Alphabet = base32::Alphabet::RFC4648 { padding: false };
 
+/// encode_check
 pub fn encode_account_id(data: &[u8]) -> Result<String> {
     encode_check(ACCOUNT_ID_VERSION_BYTE, data)
 }
-
+/// decode_account_id
 pub fn decode_account_id(data: &str) -> Result<Vec<u8>> {
     decode_check(ACCOUNT_ID_VERSION_BYTE, data)
 }
-
+/// encode_secret_seed
 pub fn encode_secret_seed(data: &[u8]) -> Result<String> {
     encode_check(SECRET_SEED_VERSION_BYTE, data)
 }
+/// decode_secret_seed
 pub fn decode_secret_seed(data: &str) -> Result<Vec<u8>> {
     decode_check(SECRET_SEED_VERSION_BYTE, data)
 }
-
+/// encode_pre_auth_tx
 pub fn encode_pre_auth_tx(data: &[u8]) -> Result<String> {
     encode_check(PRE_AUTH_TX_VERSION_BYTE, data)
 }
+/// decode_pre_auth_tx
 pub fn decode_pre_auth_tx(data: &str) -> Result<Vec<u8>> {
     decode_check(PRE_AUTH_TX_VERSION_BYTE, data)
 }
-
+/// encode_sha256_hash
 pub fn encode_sha256_hash(data: &[u8]) -> Result<String> {
     encode_check(SHA256_HASH_VERSION_BYTE, data)
 }
+/// decode_sha256_hash
 pub fn decode_sha256_hash(data: &str) -> Result<Vec<u8>> {
     decode_check(SHA256_HASH_VERSION_BYTE, data)
 }
